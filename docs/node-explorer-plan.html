@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Node Explorer — Implementation Plan</title>
+<style>
+  :root {
+    --bg: #0d1117; --panel: #161b22; --border: #30363d;
+    --text: #c9d1d9; --muted: #8b949e; --accent: #58a6ff;
+    --green: #3fb950; --yellow: #d29922; --code-bg: #1c2128;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 2rem 1rem; background: var(--bg); color: var(--text);
+    font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  }
+  main { max-width: 900px; margin: 0 auto; }
+  h1 { font-size: 2rem; border-bottom: 2px solid var(--border); padding-bottom: .5rem; }
+  h2 { font-size: 1.4rem; margin-top: 2.5rem; color: var(--accent); border-bottom: 1px solid var(--border); padding-bottom: .3rem; }
+  h3 { font-size: 1.1rem; margin-top: 1.6rem; color: #e6edf3; }
+  a { color: var(--accent); }
+  code { background: var(--code-bg); padding: .15em .4em; border-radius: 4px; font-family: "SF Mono", Menlo, Consolas, monospace; font-size: .88em; }
+  pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; overflow-x: auto; }
+  pre code { background: none; padding: 0; }
+  .callout { background: var(--panel); border-left: 4px solid var(--accent); border-radius: 6px; padding: 1rem 1.2rem; margin: 1.2rem 0; }
+  .callout.warn { border-left-color: var(--yellow); }
+  .callout.key { border-left-color: var(--green); }
+  ul { padding-left: 1.4rem; }
+  li { margin: .35rem 0; }
+  table { border-collapse: collapse; width: 100%; margin: 1rem 0; }
+  th, td { border: 1px solid var(--border); padding: .5rem .7rem; text-align: left; }
+  th { background: var(--panel); }
+  .tag { display: inline-block; background: var(--panel); border: 1px solid var(--border); border-radius: 999px; padding: .1rem .6rem; font-size: .8rem; color: var(--muted); margin: 0 .2rem .3rem 0; }
+  .muted { color: var(--muted); }
+</style>
+</head>
+<body>
+<main>
+
+<h1>Node Explorer — Implementation Plan</h1>
+<p class="muted">A Norton Commander–style two-pane terminal file manager. Built on Node 24 native type stripping — no compiler, no build step.</p>
+
+<h2>Context</h2>
+<p>
+  We're building <strong>Node Explorer</strong>, a Norton Commander–style two-pane terminal file
+  manager, from scratch (the project directory is currently empty). It is inspired by
+  <a href="https://github.com/xndlnk/disk-reclaim">disk-reclaim</a> and deliberately reuses its
+  tech stack and conventions. Where disk-reclaim is a read-only disk-usage viewer, Node Explorer
+  is an <strong>interactive file manager</strong>: two independently-navigable panes, Tab to switch
+  the active pane, per-file sizes, and full CRUD operations (copy, move, delete, rename, mkdir),
+  plus opening files in <strong>vim</strong> and returning to the explorer.
+</p>
+
+<h3>Why this stack</h3>
+<ul>
+  <li><strong>Node with types stripped at runtime, no compiler.</strong> Node v24.18 (installed) runs
+    <code>.ts</code> files directly via native type stripping — no <code>tsc</code>, no build step.</li>
+  <li><strong>The critical constraint:</strong> native type stripping erases type annotations but
+    <strong>cannot transform JSX</strong>. disk-reclaim sidesteps this by using <code>htm</code>
+    (hyperscript tagged templates) instead of JSX with Ink. We do the same — this is the linchpin that
+    lets us use Ink (React for terminals) in plain <code>.ts</code> files with zero build tooling.</li>
+</ul>
+
+<div class="callout key">
+  <strong>Confirmed decisions</strong>
+  <ul>
+    <li><strong>Keybindings:</strong> support <em>both</em> Norton Commander F-keys <em>and</em> letter shortcuts.</li>
+    <li><strong>Directory sizes:</strong> show <code>&lt;DIR&gt;</code>; compute recursive size <strong>on demand</strong> (press <code>s</code>).</li>
+    <li><strong>v1 operations:</strong> Copy, Move, Delete, Make directory, Rename, View (F3), Edit-in-vim (F4).</li>
+  </ul>
+</div>
+
+<h2>Tech Stack</h2>
+<ul>
+  <li>Runtime: <strong>Node ≥ 24</strong> (native type stripping, on by default).</li>
+  <li>Deps (match disk-reclaim): <span class="tag">ink ^5</span><span class="tag">react ^18</span><span class="tag">htm ^3</span></li>
+  <li>No JSX, no <code>tsc</code> for running. Files are <code>.ts</code>, rendered with
+    <code>const html = htm.bind(React.createElement)</code>.</li>
+  <li>Optional dev-only: <code>typescript</code> as a devDependency for editor/CI type checking via
+    <code>tsc --noEmit</code> — <strong>never</strong> used to build or run.</li>
+</ul>
+
+<h2>File Structure</h2>
+<pre><code>node-explorer/
+  package.json            # "type":"module"; deps ink/react/htm; bin + scripts
+  tsconfig.json           # dev-only typecheck config (noEmit, erasableSyntaxOnly)
+  src/
+    index.ts              # entry: render(html`&lt;${App}/&gt;`)
+    types.ts              # shared type aliases (Entry, PaneState, Modal) — import type only
+    ui/
+      App.ts              # root: two panes, active-pane + modal state, global key routing
+      Pane.ts             # one pane: path header, FileList, footer
+      FileList.ts         # scrollable, cursor-tracking, viewport-windowed listing
+      Dialog.ts           # confirm modal + text-input modal (delete/copy confirm, mkdir/rename)
+      StatusBar.ts        # bottom function-key hint bar
+      useEditor.ts        # hook: suspend Ink, spawn vim, resume
+    core/
+      fs.ts               # listDir(): readdir+lstat -&gt; sorted Entry[]; sorting rules
+      ops.ts              # copy / move / delete / mkdir / rename (node:fs/promises)
+      dirSize.ts          # on-demand recursive size walk
+    util/
+      format.ts           # formatSize, formatDate, column layout/padding
+      fkeys.ts            # map raw escape sequences -&gt; F-key ids (Ink can't decode F-keys)
+  test/
+    fs.test.js  ops.test.js  format.test.js   # node:test units for pure/core logic</code></pre>
+
+<h2>Key Design Details</h2>
+
+<h3>1. htm + Ink, no JSX</h3>
+<p>Each component module:
+  <code>import React from 'react'; import htm from 'htm'; const html = htm.bind(React.createElement)</code>,
+  then return <code>html`&lt;${Box} flexDirection="column"&gt;...`</code>. Interpolate child
+  components with <code>&lt;${Pane} .../&gt;</code>.</p>
+
+<h3>2. Type-stripping rules to follow (so Node runs it unmodified)</h3>
+<ul>
+  <li>Local imports use the <strong>explicit <code>.ts</code> extension</strong>: <code>import { listDir } from './core/fs.ts'</code>.</li>
+  <li>Type-only imports use <code>import type { Entry } from './types.ts'</code>.</li>
+  <li><strong>No</strong> enums, namespaces with runtime bodies, parameter properties, or <code>declare</code>
+    fields (non-erasable syntax). <code>tsconfig.json</code> sets <code>erasableSyntaxOnly: true</code> +
+    <code>allowImportingTsExtensions: true</code> + <code>verbatimModuleSyntax: true</code> to enforce this in the editor.</li>
+</ul>
+
+<h3>3. State (in <code>App.ts</code>)</h3>
+<ul>
+  <li>Two <code>PaneState</code> objects: <code>{ cwd, entries, cursor, scrollOffset }</code>.</li>
+  <li><code>active: 0 | 1</code>; <strong>Tab</strong> toggles it. Each pane navigates independently.</li>
+  <li><code>modal</code> state drives Dialog (none | confirm-delete | confirm-copy | confirm-move | input-mkdir | input-rename).</li>
+  <li>Entries sorted <strong>dirs first, then files, alphabetical</strong>, with a leading <code>..</code> row
+    (except at filesystem root) to navigate up. <strong>Enter</strong> on a dir → <code>chdir</code>; on a file → open in vim.</li>
+</ul>
+
+<h3>4. Input handling (<code>useInput</code> + <code>fkeys.ts</code>)</h3>
+<p>Ink's <code>useInput(input, key)</code> decodes <code>tab</code>, arrows, <code>return</code>,
+  <code>escape</code>, <code>delete</code>, <code>ctrl</code>, etc., but <strong>not F-keys</strong> — those
+  arrive as raw escape sequences in <code>input</code> (e.g. F5 = <code>\x1b[15~</code>).
+  <code>util/fkeys.ts</code> maps those sequences to ids so we can bind F3–F10. Letter keys
+  (<code>v e c m n d r q s</code>) are read directly from <code>input</code>. Both schemes call the same
+  action handlers. When a modal is open, input routes to the Dialog instead of pane navigation.</p>
+
+<h3>5. Edit-in-vim (<code>useEditor.ts</code>) — the delicate part</h3>
+<pre><code>const { setRawMode, isRawModeSupported, stdin } = useStdin()
+// on F4/e:
+if (!isRawModeSupported) return            // graceful no-op on non-TTY
+setRawMode(false)                          // Ink's setRawMode, not process.stdin's
+stdin.pause?.()
+spawnSync('vim', [absPath], { stdio: 'inherit' })   // vim owns the TTY, we block
+setRawMode(true)
+stdin.resume?.()
+// then refresh the active pane listing (file may have changed size)</code></pre>
+<div class="callout warn">
+  <strong>Gotchas (from research):</strong> use <strong>Ink's</strong> <code>setRawMode</code>
+  (via <code>useStdin</code>) so Ctrl+C stays handled; guard with <code>isRawModeSupported</code>;
+  fully suspending input during the spawn prevents vim's terminal-background-color query response
+  from leaking escape sequences into our UI. Editor is <code>$EDITOR</code> if set, else <code>vim</code>.
+</div>
+
+<h3>6. Core FS operations — reuse Node built-ins, don't hand-roll</h3>
+<table>
+  <tr><th>Op</th><th>Implementation</th></tr>
+  <tr><td>List</td><td><code>fs.readdir(dir, { withFileTypes: true })</code> + <code>fs.lstat</code> per entry for size/mtime</td></tr>
+  <tr><td>Copy</td><td><code>fs.cp(src, dest, { recursive: true })</code></td></tr>
+  <tr><td>Move</td><td><code>fs.rename</code>, with cross-device fallback to <code>cp</code> + <code>rm</code></td></tr>
+  <tr><td>Delete</td><td><code>fs.rm(path, { recursive: true, force: true })</code></td></tr>
+  <tr><td>MkDir</td><td><code>fs.mkdir</code></td></tr>
+  <tr><td>Rename</td><td><code>fs.rename</code></td></tr>
+</table>
+<ul>
+  <li>Copy/Move default destination = the <strong>other pane's</strong> <code>cwd</code> (Norton Commander behavior),
+    shown/confirmed in the Dialog. Delete/overwrite always confirm first.</li>
+  <li><code>core/dirSize.ts</code>: recursive <code>lstat</code> walk summing file sizes; triggered by
+    <code>s</code>, result cached on the entry and shown in place of <code>&lt;DIR&gt;</code>.</li>
+</ul>
+
+<h3>7. Viewport / scrolling (<code>FileList.ts</code>)</h3>
+<p>Visible rows = <code>process.stdout.rows</code> minus header/footer. Compute window start from
+  <code>cursor</code> so the selection stays in view (clamp + keep-centered, like disk-reclaim's
+  <code>src/ui/App.js</code>). Highlight the cursor row; dim the inactive pane's cursor.</p>
+
+<h2>Verification</h2>
+<ol>
+  <li><strong>Run it:</strong> <code>npm install</code> then <code>npm start</code> (<code>node src/index.ts</code>). A two-pane explorer appears.</li>
+  <li><strong>Manual walkthrough</strong> (single terminal):
+    <ul>
+      <li>Tab switches the active pane; arrows move the cursor; Enter descends into a dir and <code>..</code> goes up — each pane independent.</li>
+      <li><code>F7</code>/<code>n</code> → mkdir dialog creates a folder; it appears in the list.</li>
+      <li><code>F5</code>/<code>c</code> on a file → copy dialog (dest = other pane) → file appears in the other pane.</li>
+      <li><code>F6</code>/<code>m</code> → move; <code>F8</code>/<code>d</code> → delete (with confirm); <code>r</code> → rename in place.</li>
+      <li><code>s</code> on a <code>&lt;DIR&gt;</code> row → recursive size replaces <code>&lt;DIR&gt;</code>.</li>
+      <li><code>F3</code>/<code>v</code> → in-app read-only viewer; <code>Esc</code> closes it.</li>
+      <li><code>F4</code>/<code>e</code> on a file → <strong>vim opens full-screen; on <code>:q</code> control returns to Node Explorer
+        at the same pane/cursor</strong>, and the file's size refreshes. <em>(Primary acceptance test.)</em></li>
+      <li><code>F10</code>/<code>q</code> quits cleanly (terminal restored, raw mode off).</li>
+    </ul>
+  </li>
+  <li><strong>Unit tests:</strong> <code>node --test</code> covers pure/core logic — <code>format.ts</code>
+    (size/date formatting), <code>fs.ts</code> sorting, and <code>ops.ts</code> against a temp dir
+    (mkdir/copy/rename/delete round-trips).</li>
+  <li><strong>Type check (optional, dev):</strong> <code>npx tsc --noEmit</code> reports zero errors and
+    confirms all syntax is erasable (so Node runs the sources untouched).</li>
+</ol>
+
+<h2>Out of Scope for v1 (possible follow-ups)</h2>
+<p>Multi-file marking (Insert key), archive browsing, built-in text editor, filesystem
+  watching/auto-refresh, config file for custom keybindings.</p>
+
+<h2 style="margin-top:2.5rem;">References</h2>
+<ul>
+  <li><a href="https://github.com/xndlnk/disk-reclaim">disk-reclaim</a> — reference project & stack</li>
+  <li><a href="https://github.com/vadimdemedes/ink">Ink</a> — React for terminal UIs</li>
+  <li><a href="https://ratatui.rs/recipes/apps/spawn-vim/">Ratatui: Spawn External Editor (Vim)</a> — the escape-sequence-leak gotcha</li>
+  <li><a href="https://blog.logrocket.com/add-interactivity-to-your-clis-with-react/">LogRocket: Add interactivity to your CLIs with React</a> — Ink external-editor pattern</li>
+</ul>
+
+</main>
+</body>
+</html>
