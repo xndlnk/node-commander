@@ -147,36 +147,36 @@
 
 <h4>Tasks</h4>
 <ul class="checklist">
-  <li><input type="checkbox"> <code>package.json</code>: <code>"type":"module"</code>; deps <code>ink@^5</code>, <code>react@^18.3</code>, <code>htm@^3</code>; devDep <code>typescript@^5</code>; scripts <code>start</code> (<code>node src/index.ts</code>), <code>test</code> (<code>node --test</code>), <code>typecheck</code> (<code>tsc --noEmit</code>); <code>bin</code> → <code>src/index.ts</code>; <code>engines.node</code> ≥ 24. Run <code>npm install</code>.</li>
-  <li><input type="checkbox"> <code>tsconfig.json</code>: <code>noEmit</code>, <code>erasableSyntaxOnly</code>, <code>allowImportingTsExtensions</code>, <code>verbatimModuleSyntax</code>, <code>module</code>/<code>moduleResolution</code> = <code>nodenext</code>, <code>target</code> <code>es2023</code>, <code>jsx</code> not set, <code>strict</code>.</li>
-  <li><input type="checkbox"> <code>src/types.ts</code>: <code>Entry</code> (<code>{ name, isDir, size, mtime, sizeComputed? }</code>), <code>PaneState</code> (<code>{ cwd, entries, cursor, scrollOffset }</code>), <code>Modal</code> union, <code>MenuItem</code>. Export via <code>export type</code> only (no runtime body).</li>
-  <li><input type="checkbox"> <code>src/util/format.ts</code>: <code>formatSize(bytes)</code> (human units), <code>formatDate(mtime)</code>, and a column/padding helper for the listing row (name / size / mtime).</li>
-  <li><input type="checkbox"> <code>src/util/fkeys.ts</code>: <code>decodeFKey(input, key)</code> mapping <strong>ESC-stripped</strong> sequences → ids only when <code>key.meta === true</code> (so a bare <code>[15~</code> in file content / paste is not misread as F5). F1–F4 = <code>OP/OQ/OR/OS</code>; F5–F10 = <code>[15~ [17~ [18~ [19~ [20~ [21~</code>. Only the bound keys need actions (F2/F3/F4/F5/F6/F7/F8/F10); F1/F9 may be omitted or decoded-but-unbound. Returns <code>null</code> for non-F-key input.</li>
-  <li><input type="checkbox"> <code>src/core/fs.ts</code>: <code>listDir(cwd)</code> → <code>fs.readdir(cwd,{withFileTypes:true})</code> + per-entry <code>fs.lstat</code> for size/mtime (skip symlink targets); sort <strong>dirs-first, then files, alphabetical (locale-aware, case-insensitive)</strong>; prepend <code>..</code> unless <code>cwd</code> is the fs root. Directory <code>size</code> starts unknown → rendered <code>&lt;DIR&gt;</code>.</li>
-  <li><input type="checkbox"> <code>src/ui/FileList.ts</code>: <code>windowFor(cursor,total,height)</code> center-clamp windowing (per disk-reclaim); render visible slice, remap index via <code>start+i</code>; highlight cursor row (<code>inverse</code>); dim the inactive pane's cursor.</li>
-  <li><input type="checkbox"> <code>src/ui/Pane.ts</code>: path header (truncate-middle) + <code>FileList</code> + footer; receives <code>active</code> flag.</li>
-  <li><input type="checkbox"> <code>src/ui/StatusBar.ts</code>: F-key hint bar plus a <strong>status message line</strong> prop (last action/error; empty by default).</li>
-  <li><input type="checkbox"> <code>src/ui/App.ts</code>: two <code>PaneState</code>, <code>active: 0|1</code>, <code>modal</code> (none for now), <code>status</code> string. <code>useInput</code> routes: <strong>Tab</strong> toggles active; arrows/<code>PgUp</code>/<code>PgDn</code> move cursor (clamped); <strong>Enter</strong> on dir → chdir (reset cursor), on <code>..</code> → parent, on file → no-op stub; <code>F10</code>/<code>q</code> → <code>useApp().exit()</code>. Any keypress clears <code>status</code>. <code>viewHeight = max(3, (process.stdout.rows||24) - chrome)</code>.</li>
-  <li><input type="checkbox"> <code>src/index.ts</code>: <code>#!/usr/bin/env node</code>; <code>render(html`&lt;${App}/&gt;`)</code>; initial <code>cwd</code> = <code>process.cwd()</code> for both panes.</li>
-  <li><input type="checkbox"> <code>README.md</code>: project summary, install/run, keybindings table (mark F2/F3/F4/menu as later phases).</li>
-  <li><input type="checkbox"> Tests: <code>test/format.test.js</code> (size/date formatting, padding), <code>test/fkeys.test.js</code> (each F-key sequence + <code>key.meta</code> → id; a bare <code>[15~</code> without <code>key.meta</code> → null; non-F-key → null), <code>test/fs.test.js</code> (sorting order dirs-first/alpha, <code>..</code> presence and root suppression against a temp dir).</li>
+  <li><input type="checkbox" checked> <code>package.json</code>: <code>"type":"module"</code>; deps <code>ink@^5</code>, <code>react@^18.3</code>, <code>htm@^3</code>; devDep <code>typescript@^5</code>; scripts <code>start</code> (<code>node src/index.ts</code>), <code>test</code> (<code>node --test</code>), <code>typecheck</code> (<code>tsc --noEmit</code>); <code>bin</code> → <code>src/index.ts</code>; <code>engines.node</code> ≥ 24. Run <code>npm install</code>.</li>
+  <li><input type="checkbox" checked> <code>tsconfig.json</code>: <code>noEmit</code>, <code>erasableSyntaxOnly</code>, <code>allowImportingTsExtensions</code>, <code>verbatimModuleSyntax</code>, <code>module</code>/<code>moduleResolution</code> = <code>nodenext</code>, <code>target</code> <code>es2023</code>, <code>jsx</code> not set, <code>strict</code>.</li>
+  <li><input type="checkbox" checked> <code>src/types.ts</code>: <code>Entry</code> (<code>{ name, isDir, size, mtime, sizeComputed? }</code>), <code>PaneState</code> (<code>{ cwd, entries, cursor, scrollOffset }</code>), <code>Modal</code> union, <code>MenuItem</code>. Export via <code>export type</code> only (no runtime body).</li>
+  <li><input type="checkbox" checked> <code>src/util/format.ts</code>: <code>formatSize(bytes)</code> (human units), <code>formatDate(mtime)</code>, and a column/padding helper for the listing row (name / size / mtime).</li>
+  <li><input type="checkbox" checked> <code>src/util/fkeys.ts</code>: <code>decodeFKey(input, key)</code> mapping <strong>ESC-stripped</strong> sequences → ids only when <code>key.meta === true</code> (so a bare <code>[15~</code> in file content / paste is not misread as F5). F1–F4 = <code>OP/OQ/OR/OS</code>; F5–F10 = <code>[15~ [17~ [18~ [19~ [20~ [21~</code>. Only the bound keys need actions (F2/F3/F4/F5/F6/F7/F8/F10); F1/F9 may be omitted or decoded-but-unbound. Returns <code>null</code> for non-F-key input.</li>
+  <li><input type="checkbox" checked> <code>src/core/fs.ts</code>: <code>listDir(cwd)</code> → <code>fs.readdir(cwd,{withFileTypes:true})</code> + per-entry <code>fs.lstat</code> for size/mtime (skip symlink targets); sort <strong>dirs-first, then files, alphabetical (locale-aware, case-insensitive)</strong>; prepend <code>..</code> unless <code>cwd</code> is the fs root. Directory <code>size</code> starts unknown → rendered <code>&lt;DIR&gt;</code>.</li>
+  <li><input type="checkbox" checked> <code>src/ui/FileList.ts</code>: <code>windowFor(cursor,total,height)</code> center-clamp windowing (per disk-reclaim); render visible slice, remap index via <code>start+i</code>; highlight cursor row (<code>inverse</code>); dim the inactive pane's cursor.</li>
+  <li><input type="checkbox" checked> <code>src/ui/Pane.ts</code>: path header (truncate-middle) + <code>FileList</code> + footer; receives <code>active</code> flag.</li>
+  <li><input type="checkbox" checked> <code>src/ui/StatusBar.ts</code>: F-key hint bar plus a <strong>status message line</strong> prop (last action/error; empty by default).</li>
+  <li><input type="checkbox" checked> <code>src/ui/App.ts</code>: two <code>PaneState</code>, <code>active: 0|1</code>, <code>modal</code> (none for now), <code>status</code> string. <code>useInput</code> routes: <strong>Tab</strong> toggles active; arrows/<code>PgUp</code>/<code>PgDn</code> move cursor (clamped); <strong>Enter</strong> on dir → chdir (reset cursor), on <code>..</code> → parent, on file → no-op stub; <code>F10</code>/<code>q</code> → <code>useApp().exit()</code>. Any keypress clears <code>status</code>. <code>viewHeight = max(3, (process.stdout.rows||24) - chrome)</code>.</li>
+  <li><input type="checkbox" checked> <code>src/index.ts</code>: <code>#!/usr/bin/env node</code>; <code>render(html`&lt;${App}/&gt;`)</code>; initial <code>cwd</code> = <code>process.cwd()</code> for both panes.</li>
+  <li><input type="checkbox" checked> <code>README.md</code>: project summary, install/run, keybindings table (mark F2/F3/F4/menu as later phases).</li>
+  <li><input type="checkbox" checked> Tests: <code>test/format.test.js</code> (size/date formatting, padding), <code>test/fkeys.test.js</code> (each F-key sequence + <code>key.meta</code> → id; a bare <code>[15~</code> without <code>key.meta</code> → null; non-F-key → null), <code>test/fs.test.js</code> (sorting order dirs-first/alpha, <code>..</code> presence and root suppression against a temp dir).</li>
 </ul>
 
 <h4>Automated Verification</h4>
 <ul class="checklist">
-  <li><input type="checkbox"> <code>npm install</code> completes without errors.</li>
-  <li><input type="checkbox"> <code>node --test</code> passes (format, fkeys, fs).</li>
-  <li><input type="checkbox"> <code>npx tsc --noEmit</code> reports zero errors (confirms erasable syntax).</li>
-  <li><input type="checkbox"> <code>node -e "import('./src/ui/App.ts')"</code> (or <code>node --check</code> path equivalent) imports without a type-stripping/runtime error.</li>
+  <li><input type="checkbox" checked> <code>npm install</code> completes without errors.</li>
+  <li><input type="checkbox" checked> <code>node --test</code> passes (format, fkeys, fs).</li>
+  <li><input type="checkbox" checked> <code>npx tsc --noEmit</code> reports zero errors (confirms erasable syntax).</li>
+  <li><input type="checkbox" checked> <code>node -e "import('./src/ui/App.ts')"</code> (or <code>node --check</code> path equivalent) imports without a type-stripping/runtime error.</li>
 </ul>
 
 <h4>Manual Verification <span class="pill">milestone</span></h4>
 <ul class="checklist">
-  <li><input type="checkbox"> <code>npm start</code> shows two panes side by side listing the current dir.</li>
-  <li><input type="checkbox"> Tab switches the active pane (cursor highlight moves; inactive pane dimmed).</li>
-  <li><input type="checkbox"> Arrows move the cursor; the selection stays in view past the bottom (windowing); PgUp/PgDn page.</li>
-  <li><input type="checkbox"> Enter descends into a dir; <code>..</code> goes up; each pane navigates independently; no <code>..</code> at fs root.</li>
-  <li><input type="checkbox"> <code>F10</code>/<code>q</code> exits cleanly and the terminal is restored.</li>
+  <li><input type="checkbox" checked> <code>npm start</code> shows two panes side by side listing the current dir.</li>
+  <li><input type="checkbox" checked> Tab switches the active pane (cursor highlight moves; inactive pane dimmed).</li>
+  <li><input type="checkbox" checked> Arrows move the cursor; the selection stays in view past the bottom (windowing); PgUp/PgDn page.</li>
+  <li><input type="checkbox" checked> Enter descends into a dir; <code>..</code> goes up; each pane navigates independently; no <code>..</code> at fs root.</li>
+  <li><input type="checkbox" checked> <code>F10</code>/<code>q</code> exits cleanly and the terminal is restored.</li>
 </ul>
 </div>
 
@@ -187,38 +187,38 @@
 
 <h4>Tasks</h4>
 <ul class="checklist">
-  <li><input type="checkbox"> <code>src/core/ops.ts</code> (<code>node:fs/promises</code>): <code>copy(src,dest)</code> → <code>fs.cp(src,dest,{recursive:true})</code>; <code>move(src,dest)</code> → <code>fs.rename</code> with <code>EXDEV</code> cross-device fallback to <code>cp</code>+<code>rm</code>; <code>remove(path)</code> → <code>fs.rm(path,{recursive:true,force:true})</code>; <code>makeDir(path)</code> → <code>fs.mkdir</code>; <code>rename(src,dest)</code> → <code>fs.rename</code>. Each returns a result/throws a typed error for the status line. Add an <code>exists(path)</code> helper for overwrite detection.</li>
-  <li><input type="checkbox"> <code>src/core/dirSize.ts</code>: recursive <code>lstat</code> walk summing file sizes (skip symlinks); returns total bytes. Result cached on the <code>Entry</code> (<code>size</code> + <code>sizeComputed=true</code>).</li>
-  <li><input type="checkbox"> <code>src/ui/Dialog.ts</code>: two modes — <strong>confirm</strong> (message + Yes/No, Enter=confirm, Esc/N=cancel) and <strong>text-input</strong> (label + editable field, Enter=submit, Esc=cancel). Driven by <code>modal</code> state; routes input while open.</li>
-  <li><input type="checkbox"> Wire actions in <code>App.ts</code> (F-key + letter → same handler):
+  <li><input type="checkbox" checked> <code>src/core/ops.ts</code> (<code>node:fs/promises</code>): <code>copy(src,dest)</code> → <code>fs.cp(src,dest,{recursive:true})</code>; <code>move(src,dest)</code> → <code>fs.rename</code> with <code>EXDEV</code> cross-device fallback to <code>cp</code>+<code>rm</code>; <code>remove(path)</code> → <code>fs.rm(path,{recursive:true,force:true})</code>; <code>makeDir(path)</code> → <code>fs.mkdir</code>; <code>rename(src,dest)</code> → <code>fs.rename</code>. Each returns a result/throws a typed error for the status line. Add an <code>exists(path)</code> helper for overwrite detection.</li>
+  <li><input type="checkbox" checked> <code>src/core/dirSize.ts</code>: recursive <code>lstat</code> walk summing file sizes (skip symlinks); returns total bytes. Result cached on the <code>Entry</code> (<code>size</code> + <code>sizeComputed=true</code>).</li>
+  <li><input type="checkbox" checked> <code>src/ui/Dialog.ts</code>: two modes — <strong>confirm</strong> (message + Yes/No, Enter=confirm, Esc/N=cancel) and <strong>text-input</strong> (label + editable field, Enter=submit, Esc=cancel). Driven by <code>modal</code> state; routes input while open.</li>
+  <li><input type="checkbox" checked> Wire actions in <code>App.ts</code> (F-key + letter → same handler):
     <ul>
-      <li><input type="checkbox"> <code>F7</code>/<code>n</code> → <code>input-mkdir</code> dialog → <code>makeDir</code> in active pane; refresh.</li>
-      <li><input type="checkbox"> <code>F5</code>/<code>c</code> → <code>confirm-copy</code> (default dest = <strong>other pane's</strong> <code>cwd</code>, shown) → <code>copy</code>; if dest exists, escalate to overwrite confirm; refresh both panes.</li>
-      <li><input type="checkbox"> <code>F6</code>/<code>m</code> → <code>confirm-move</code> (dest = other pane) → <code>move</code>; overwrite confirm as above; refresh both.</li>
-      <li><input type="checkbox"> <code>F8</code>/<code>d</code> → <code>confirm-delete</code> → <code>remove</code>; refresh; clamp cursor.</li>
-      <li><input type="checkbox"> <code>r</code> → <code>input-rename</code> (prefilled with current name) → <code>rename</code> in place; refresh; keep cursor on renamed entry.</li>
-      <li><input type="checkbox"> <code>s</code> → <code>dirSize</code> on the hovered <code>&lt;DIR&gt;</code>; replace <code>&lt;DIR&gt;</code> with the formatted size (cached).</li>
+      <li><input type="checkbox" checked> <code>F7</code>/<code>n</code> → <code>input-mkdir</code> dialog → <code>makeDir</code> in active pane; refresh.</li>
+      <li><input type="checkbox" checked> <code>F5</code>/<code>c</code> → <code>confirm-copy</code> (default dest = <strong>other pane's</strong> <code>cwd</code>, shown) → <code>copy</code>; if dest exists, escalate to overwrite confirm; refresh both panes.</li>
+      <li><input type="checkbox" checked> <code>F6</code>/<code>m</code> → <code>confirm-move</code> (dest = other pane) → <code>move</code>; overwrite confirm as above; refresh both.</li>
+      <li><input type="checkbox" checked> <code>F8</code>/<code>d</code> → <code>confirm-delete</code> → <code>remove</code>; refresh; clamp cursor.</li>
+      <li><input type="checkbox" checked> <code>r</code> → <code>input-rename</code> (prefilled with current name) → <code>rename</code> in place; refresh; keep cursor on renamed entry.</li>
+      <li><input type="checkbox" checked> <code>s</code> → <code>dirSize</code> on the hovered <code>&lt;DIR&gt;</code>; replace <code>&lt;DIR&gt;</code> with the formatted size (cached).</li>
     </ul>
   </li>
-  <li><input type="checkbox"> Success/error → <code>status</code> line (e.g. <code>✓ Copied report.pdf → /home/other</code> / <code>Permission denied</code>); guard against operating on the <code>..</code> row.</li>
-  <li><input type="checkbox"> Tests: <code>test/ops.test.js</code> (temp-dir round-trips: mkdir → copy → rename → move → delete; cross-device fallback path exercised or documented as skipped), plus a <code>dirSize</code> case (known tree → expected total).</li>
-  <li><input type="checkbox"> README: fill in the operations keybindings and dest-default behavior.</li>
+  <li><input type="checkbox" checked> Success/error → <code>status</code> line (e.g. <code>✓ Copied report.pdf → /home/other</code> / <code>Permission denied</code>); guard against operating on the <code>..</code> row.</li>
+  <li><input type="checkbox" checked> Tests: <code>test/ops.test.js</code> (temp-dir round-trips: mkdir → copy → rename → move → delete; cross-device fallback path exercised or documented as skipped), plus a <code>dirSize</code> case (known tree → expected total).</li>
+  <li><input type="checkbox" checked> README: fill in the operations keybindings and dest-default behavior.</li>
 </ul>
 
 <h4>Automated Verification</h4>
 <ul class="checklist">
-  <li><input type="checkbox"> <code>node --test</code> passes including <code>ops</code> + <code>dirSize</code>.</li>
-  <li><input type="checkbox"> <code>npx tsc --noEmit</code> reports zero errors.</li>
+  <li><input type="checkbox" checked> <code>node --test</code> passes including <code>ops</code> + <code>dirSize</code>.</li>
+  <li><input type="checkbox" checked> <code>npx tsc --noEmit</code> reports zero errors.</li>
 </ul>
 
 <h4>Manual Verification <span class="pill">milestone</span></h4>
 <ul class="checklist">
-  <li><input type="checkbox"> <code>F7</code>/<code>n</code> creates a folder; it appears in the list.</li>
-  <li><input type="checkbox"> <code>F5</code>/<code>c</code> on a file copies to the other pane (default dest shown); the file appears there.</li>
-  <li><input type="checkbox"> <code>F6</code>/<code>m</code> moves; <code>F8</code>/<code>d</code> deletes after confirm; <code>r</code> renames in place.</li>
-  <li><input type="checkbox"> Copying/moving onto an existing name triggers an overwrite confirm.</li>
-  <li><input type="checkbox"> <code>s</code> on a <code>&lt;DIR&gt;</code> row replaces <code>&lt;DIR&gt;</code> with the recursive size.</li>
-  <li><input type="checkbox"> A failing op (e.g. delete a protected path) shows the error on the status line without crashing.</li>
+  <li><input type="checkbox" checked> <code>F7</code>/<code>n</code> creates a folder; it appears in the list.</li>
+  <li><input type="checkbox" checked> <code>F5</code>/<code>c</code> on a file copies to the other pane (default dest shown); the file appears there.</li>
+  <li><input type="checkbox" checked> <code>F6</code>/<code>m</code> moves; <code>F8</code>/<code>d</code> deletes after confirm; <code>r</code> renames in place.</li>
+  <li><input type="checkbox" checked> Copying/moving onto an existing name triggers an overwrite confirm.</li>
+  <li><input type="checkbox" checked> <code>s</code> on a <code>&lt;DIR&gt;</code> row replaces <code>&lt;DIR&gt;</code> with the recursive size.</li>
+  <li><input type="checkbox" checked> A failing op (e.g. delete a protected path) shows the error on the status line without crashing.</li>
 </ul>
 </div>
 
@@ -229,35 +229,35 @@
 
 <h4>Tasks</h4>
 <ul class="checklist">
-  <li><input type="checkbox"> Add dep <code>cli-highlight@^2.1</code>; <code>npm install</code>.</li>
-  <li><input type="checkbox"> <code>src/ui/useShell.ts</code>: <code>runInTerminal(cmdOrArgs, opts)</code> using <code>useStdin()</code> → <code>{ setRawMode, isRawModeSupported, stdin }</code>:
+  <li><input type="checkbox" checked> Add dep <code>cli-highlight@^2.1</code>; <code>npm install</code>.</li>
+  <li><input type="checkbox" checked> <code>src/ui/useShell.ts</code>: <code>runInTerminal(cmdOrArgs, opts)</code> using <code>useStdin()</code> → <code>{ setRawMode, isRawModeSupported, stdin }</code>:
     <ul>
-      <li><input type="checkbox"> If <code>!isRawModeSupported</code> → graceful no-op (return early).</li>
-      <li><input type="checkbox"> <code>setRawMode(false)</code>; <code>stdin.pause?.()</code>; write <code>\x1b[?2004l</code> (disable bracketed paste).</li>
-      <li><input type="checkbox"> <code>spawnSync(...)</code> with <code>stdio:'inherit'</code> (vim: <code>spawnSync(editor,[absPath])</code>; script: <code>spawnSync(cmd,{shell:true,cwd,env})</code>).</li>
-      <li><input type="checkbox"> If <code>opts.pause</code>: write <em>Press any key to continue…</em> and read one keypress (<code>fs.readSync(0, …)</code>) <strong>before</strong> restoring — while stdin is still paused/raw-off (Phase 4 uses this).</li>
-      <li><input type="checkbox"> Restore (last): write <code>\x1b[?2004h</code>; <code>stdin.resume?.()</code>; <code>setRawMode(true)</code> — so Ink recaptures stdin only after any pause read.</li>
+      <li><input type="checkbox" checked> If <code>!isRawModeSupported</code> → graceful no-op (return early).</li>
+      <li><input type="checkbox" checked> <code>setRawMode(false)</code>; <code>stdin.pause?.()</code>; write <code>\x1b[?2004l</code> (disable bracketed paste).</li>
+      <li><input type="checkbox" checked> <code>spawnSync(...)</code> with <code>stdio:'inherit'</code> (vim: <code>spawnSync(editor,[absPath])</code>; script: <code>spawnSync(cmd,{shell:true,cwd,env})</code>).</li>
+      <li><input type="checkbox" checked> If <code>opts.pause</code>: write <em>Press any key to continue…</em> and read one keypress (<code>fs.readSync(0, …)</code>) <strong>before</strong> restoring — while stdin is still paused/raw-off (Phase 4 uses this).</li>
+      <li><input type="checkbox" checked> Restore (last): write <code>\x1b[?2004h</code>; <code>stdin.resume?.()</code>; <code>setRawMode(true)</code> — so Ink recaptures stdin only after any pause read.</li>
     </ul>
   </li>
-  <li><input type="checkbox"> <code>src/util/lang.ts</code>: extension → highlight.js language id map, validated via <code>getLanguage(id)</code>; returns <code>undefined</code> (auto/none) for unknown.</li>
-  <li><input type="checkbox"> <code>src/ui/Viewer.ts</code>: read the file; if size &gt; threshold (~1 MB) or binary (NUL-byte sniff) → plain text; else <code>highlight(code,{language})</code> once, <code>split('\n')</code> → ANSI lines. Windowed scroll (reuse <code>windowFor</code>): ↑/↓ line, PgUp/PgDn page, <code>Esc</code> closes. Header shows file name + size; each visible line rendered as <code>&lt;Text wrap="truncate-end"&gt;</code>.</li>
-  <li><input type="checkbox"> Wire <code>F4</code>/<code>e</code> in <code>App.ts</code>: on a file → <code>runInTerminal($EDITOR||'vim', absPath)</code>; on return, refresh the active pane (size may have changed) and keep pane/cursor. No-op on a dir / <code>..</code>.</li>
-  <li><input type="checkbox"> Wire <code>F3</code>/<code>v</code> in <code>App.ts</code>: open <code>Viewer</code> modal on a file; ignore on a dir / <code>..</code>.</li>
-  <li><input type="checkbox"> README: document F3 (viewer + highlighting + fallback) and F4 (<code>$EDITOR</code>) behavior.</li>
+  <li><input type="checkbox" checked> <code>src/util/lang.ts</code>: extension → highlight.js language id map, validated via <code>getLanguage(id)</code>; returns <code>undefined</code> (auto/none) for unknown.</li>
+  <li><input type="checkbox" checked> <code>src/ui/Viewer.ts</code>: read the file; if size &gt; threshold (~1 MB) or binary (NUL-byte sniff) → plain text; else <code>highlight(code,{language})</code> once, <code>split('\n')</code> → ANSI lines. Windowed scroll (reuse <code>windowFor</code>): ↑/↓ line, PgUp/PgDn page, <code>Esc</code> closes. Header shows file name + size; each visible line rendered as <code>&lt;Text wrap="truncate-end"&gt;</code>.</li>
+  <li><input type="checkbox" checked> Wire <code>F4</code>/<code>e</code> in <code>App.ts</code>: on a file → <code>runInTerminal($EDITOR||'vim', absPath)</code>; on return, refresh the active pane (size may have changed) and keep pane/cursor. No-op on a dir / <code>..</code>.</li>
+  <li><input type="checkbox" checked> Wire <code>F3</code>/<code>v</code> in <code>App.ts</code>: open <code>Viewer</code> modal on a file; ignore on a dir / <code>..</code>.</li>
+  <li><input type="checkbox" checked> README: document F3 (viewer + highlighting + fallback) and F4 (<code>$EDITOR</code>) behavior.</li>
 </ul>
 
 <h4>Automated Verification</h4>
 <ul class="checklist">
-  <li><input type="checkbox"> <code>npx tsc --noEmit</code> reports zero errors.</li>
-  <li><input type="checkbox"> <code>node --test</code> still passes (optional: a <code>lang.ts</code> ext→id unit test; the TTY <code>runInTerminal</code> path is verified manually).</li>
+  <li><input type="checkbox" checked> <code>npx tsc --noEmit</code> reports zero errors.</li>
+  <li><input type="checkbox" checked> <code>node --test</code> still passes (optional: a <code>lang.ts</code> ext→id unit test; the TTY <code>runInTerminal</code> path is verified manually).</li>
 </ul>
 
 <h4>Manual Verification <span class="pill">milestone — primary acceptance</span></h4>
 <ul class="checklist">
-  <li><input type="checkbox"> <code>F4</code>/<code>e</code> on a file → <strong>vim opens full-screen; on <code>:q</code> control returns to Node Explorer at the same pane/cursor</strong>; the file's size refreshes. No leaked escape sequences (background-color query / bracketed paste) after return.</li>
-  <li><input type="checkbox"> <code>F3</code>/<code>v</code> on a source file → highlighted, scrollable read-only view; ↑/↓ and PgUp/PgDn scroll; <code>Esc</code> closes to the same pane/cursor.</li>
-  <li><input type="checkbox"> <code>F3</code> on a large or binary file → plain-text fallback, no crash, no garbled colors.</li>
-  <li><input type="checkbox"> Ctrl+C still exits cleanly during/after a spawn (Ink's raw-mode handling intact).</li>
+  <li><input type="checkbox" checked> <code>F4</code>/<code>e</code> on a file → <strong>vim opens full-screen; on <code>:q</code> control returns to Node Explorer at the same pane/cursor</strong>; the file's size refreshes. No leaked escape sequences (background-color query / bracketed paste) after return.</li>
+  <li><input type="checkbox" checked> <code>F3</code>/<code>v</code> on a source file → highlighted, scrollable read-only view; ↑/↓ and PgUp/PgDn scroll; <code>Esc</code> closes to the same pane/cursor.</li>
+  <li><input type="checkbox" checked> <code>F3</code> on a large or binary file → plain-text fallback, no crash, no garbled colors.</li>
+  <li><input type="checkbox" checked> Ctrl+C still exits cleanly during/after a spawn (Ink's raw-mode handling intact).</li>
 </ul>
 </div>
 
@@ -268,26 +268,26 @@
 
 <h4>Tasks</h4>
 <ul class="checklist">
-  <li><input type="checkbox"> <code>src/core/menu.ts</code>: <code>loadMenu()</code> resolves the config path — <code>$NODE_EXPLORER_MENU</code> if set, else <code>~/.config/node-explorer/menu.json</code>; parse JSON; validate each <code>{ key?, label, command }</code>; drop invalid entries. <strong>Missing or malformed file → return empty list</strong> (with a reason) rather than throwing.</li>
-  <li><input type="checkbox"> <code>src/ui/MenuDialog.ts</code>: overlay listing entries (<code>label</code> + optional hotkey); choose via arrows+Enter or by pressing an entry's <code>key</code>; <code>Esc</code> cancels. Empty menu shows a hint pointing at the config path.</li>
-  <li><input type="checkbox"> Wire <code>F2</code>/<code>u</code> in <code>App.ts</code>: open <code>MenuDialog</code>; on select, run via <code>runInTerminal(item.command, { shell:true, cwd: activePane.cwd, env: { ...process.env, NE_CWD, NE_SELECTED, NE_SELECTED_PATH }, pause:true })</code>.</li>
-  <li><input type="checkbox"> <em>Press any key to continue…</em> pause: after the child exits, write the prompt, read one keypress (<code>fs.readSync(0, …)</code>) before resuming Ink, then refresh the active pane (the script may have changed the dir).</li>
-  <li><input type="checkbox"> Tests: <code>test/menu.test.js</code> — valid config parses to entries; malformed JSON → empty + reason; missing file → empty + reason; invalid entries filtered.</li>
-  <li><input type="checkbox"> README: document the menu, the config-path resolution order, the JSON shape, and the <code>NE_*</code> env vars; include an example <code>menu.json</code>.</li>
+  <li><input type="checkbox" checked> <code>src/core/menu.ts</code>: <code>loadMenu()</code> resolves the config path — <code>$NODE_EXPLORER_MENU</code> if set, else <code>~/.config/node-explorer/menu.json</code>; parse JSON; validate each <code>{ key?, label, command }</code>; drop invalid entries. <strong>Missing or malformed file → return empty list</strong> (with a reason) rather than throwing.</li>
+  <li><input type="checkbox" checked> <code>src/ui/MenuDialog.ts</code>: overlay listing entries (<code>label</code> + optional hotkey); choose via arrows+Enter or by pressing an entry's <code>key</code>; <code>Esc</code> cancels. Empty menu shows a hint pointing at the config path.</li>
+  <li><input type="checkbox" checked> Wire <code>F2</code>/<code>u</code> in <code>App.ts</code>: open <code>MenuDialog</code>; on select, run via <code>runInTerminal(item.command, { shell:true, cwd: activePane.cwd, env: { ...process.env, NE_CWD, NE_SELECTED, NE_SELECTED_PATH }, pause:true })</code>.</li>
+  <li><input type="checkbox" checked> <em>Press any key to continue…</em> pause: after the child exits, write the prompt, read one keypress (<code>fs.readSync(0, …)</code>) before resuming Ink, then refresh the active pane (the script may have changed the dir).</li>
+  <li><input type="checkbox" checked> Tests: <code>test/menu.test.js</code> — valid config parses to entries; malformed JSON → empty + reason; missing file → empty + reason; invalid entries filtered.</li>
+  <li><input type="checkbox" checked> README: document the menu, the config-path resolution order, the JSON shape, and the <code>NE_*</code> env vars; include an example <code>menu.json</code>.</li>
 </ul>
 
 <h4>Automated Verification</h4>
 <ul class="checklist">
-  <li><input type="checkbox"> <code>node --test</code> passes including <code>menu</code> (valid / malformed / missing / invalid-entry cases).</li>
-  <li><input type="checkbox"> <code>npx tsc --noEmit</code> reports zero errors.</li>
+  <li><input type="checkbox" checked> <code>node --test</code> passes including <code>menu</code> (valid / malformed / missing / invalid-entry cases).</li>
+  <li><input type="checkbox" checked> <code>npx tsc --noEmit</code> reports zero errors.</li>
 </ul>
 
 <h4>Manual Verification <span class="pill">milestone — secondary acceptance</span></h4>
 <ul class="checklist">
-  <li><input type="checkbox"> With a configured <code>menu.json</code>, <code>F2</code>/<code>u</code> lists the entries; arrows+Enter and per-entry hotkeys both select.</li>
-  <li><input type="checkbox"> Selecting e.g. <em>Git status</em> runs it in the terminal with <code>cwd</code> = active pane, shows <code>Press any key to continue…</code>, then returns to the same pane/cursor with the listing refreshed.</li>
-  <li><input type="checkbox"> A script that reads <code>$NE_SELECTED</code>/<code>$NE_SELECTED_PATH</code>/<code>$NE_CWD</code> sees the correct hovered entry and directory.</li>
-  <li><input type="checkbox"> Missing/malformed <code>menu.json</code> → menu opens empty with a hint; no crash.</li>
+  <li><input type="checkbox" checked> With a configured <code>menu.json</code>, <code>F2</code>/<code>u</code> lists the entries; arrows+Enter and per-entry hotkeys both select.</li>
+  <li><input type="checkbox" checked> Selecting e.g. <em>Git status</em> runs it in the terminal with <code>cwd</code> = active pane, shows <code>Press any key to continue…</code>, then returns to the same pane/cursor with the listing refreshed.</li>
+  <li><input type="checkbox" checked> A script that reads <code>$NE_SELECTED</code>/<code>$NE_SELECTED_PATH</code>/<code>$NE_CWD</code> sees the correct hovered entry and directory.</li>
+  <li><input type="checkbox" checked> Missing/malformed <code>menu.json</code> → menu opens empty with a hint; no crash.</li>
 </ul>
 </div>
 
