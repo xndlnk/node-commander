@@ -49,5 +49,11 @@ export function FileList({ entries, cursor, height, width, active }: Props) {
     `;
   });
 
+  // Pad with blank rows so the pane always fills its full height, regardless of
+  // how many entries the directory holds.
+  for (let i = visible.length; i < height; i++) {
+    rows.push(html`<${Text} key=${`pad-${i}`}> </${Text}>`);
+  }
+
   return html`<${Box} flexDirection="column">${rows}</${Box}>`;
 }
