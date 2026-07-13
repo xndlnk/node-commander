@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Node Explorer — Implementation Plan (Phased)</title>
+<style>
+  :root {
+    --bg: #0d1117; --panel: #161b22; --border: #30363d;
+    --text: #c9d1d9; --muted: #8b949e; --accent: #58a6ff;
+    --green: #3fb950; --yellow: #d29922; --red: #f85149; --code-bg: #1c2128;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 2rem 1rem; background: var(--bg); color: var(--text);
+    font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  }
+  main { max-width: 900px; margin: 0 auto; }
+  h1 { font-size: 2rem; border-bottom: 2px solid var(--border); padding-bottom: .5rem; }
+  h2 { font-size: 1.4rem; margin-top: 2.5rem; color: var(--accent); border-bottom: 1px solid var(--border); padding-bottom: .3rem; }
+  h3 { font-size: 1.1rem; margin-top: 1.6rem; color: #e6edf3; }
+  h4 { font-size: 1rem; margin: 1.2rem 0 .4rem; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+  a { color: var(--accent); }
+  code { background: var(--code-bg); padding: .15em .4em; border-radius: 4px; font-family: "SF Mono", Menlo, Consolas, monospace; font-size: .88em; }
+  pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; overflow-x: auto; }
+  pre code { background: none; padding: 0; }
+  .callout { background: var(--panel); border-left: 4px solid var(--accent); border-radius: 6px; padding: 1rem 1.2rem; margin: 1.2rem 0; }
+  .callout.warn { border-left-color: var(--yellow); }
+  .callout.key { border-left-color: var(--green); }
+  .callout.corr { border-left-color: var(--red); }
+  ul { padding-left: 1.4rem; }
+  li { margin: .35rem 0; }
+  table { border-collapse: collapse; width: 100%; margin: 1rem 0; }
+  th, td { border: 1px solid var(--border); padding: .5rem .7rem; text-align: left; vertical-align: top; }
+  th { background: var(--panel); }
+  .tag { display: inline-block; background: var(--panel); border: 1px solid var(--border); border-radius: 999px; padding: .1rem .6rem; font-size: .8rem; color: var(--muted); margin: 0 .2rem .3rem 0; }
+  .muted { color: var(--muted); }
+  .meta-table td { border: none; padding: .15rem .6rem .15rem 0; }
+  .phase { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: .2rem 1.4rem 1.2rem; margin: 1.4rem 0; }
+  .checklist { list-style: none; padding-left: .2rem; }
+  .checklist li { margin: .3rem 0; }
+  .checklist input { margin-right: .5rem; transform: translateY(1px); }
+  .status { display: inline-block; padding: .1rem .7rem; border-radius: 999px; font-size: .85rem; font-weight: 600; }
+  .status.draft { background: #3a2d0b; color: var(--yellow); border: 1px solid var(--yellow); }
+  .status.ready { background: #0d2f1a; color: var(--green); border: 1px solid var(--green); }
+  .pill { font-size: .75rem; color: var(--muted); border: 1px solid var(--border); border-radius: 4px; padding: .05rem .4rem; margin-left: .4rem; }
+</style>
+</head>
+<body>
+<main>
+
+<h1>Node Explorer — Implementation Plan</h1>
+<p class="muted">A Norton Commander–style two-pane terminal file manager. Built on Node 24 native type stripping — no compiler, no build step. Phased, testable implementation derived from <code>docs/node-explorer-plan.html</code>.</p>
+
+<table class="meta-table">
+  <tr><td class="muted">Status</td><td><span class="status ready">ready</span></td></tr>
+  <tr><td class="muted">Date</td><td>2026-07-13</td></tr>
+  <tr><td class="muted">Branch</td><td><code>main</code></td></tr>
+  <tr><td class="muted">Base commit</td><td><code>ebacf6f</code></td></tr>
+  <tr><td class="muted">Source design</td><td><a href="../../node-explorer-plan.html">docs/node-explorer-plan.html</a></td></tr>
+  <tr><td class="muted">Reference project</td><td><a href="https://github.com/xndlnk/disk-reclaim">disk-reclaim</a> (plain <code>.js</code>; ink ^5.0.1, react ^18.3.1, htm ^3.1.1)</td></tr>
+</table>
+
+<h2>Overview</h2>
+<p>
+  Build <strong>Node Explorer</strong> from an empty repo: a two-pane, independently-navigable terminal
+  file manager with full CRUD, in-app view (F3) with syntax highlighting, edit-in-vim (F4), and a
+  custom-script user menu (F2). Runtime is <strong>Node ≥ 24</strong> running <code>.ts</code> sources
+  directly via native type stripping — <strong>no <code>tsc</code> build, no JSX</strong> (Ink is driven
+  through <code>htm</code>). The work is split into four vertical slices; each ends in a runnable,
+  testable state.
+</p>
+
+<h2>Acceptance Criteria</h2>
+<ul>
+  <li>Two independently-navigable panes; <strong>Tab</strong> switches the active pane; arrows move the cursor; <strong>Enter</strong> descends into a dir and <code>..</code> ascends; each pane keeps its own <code>cwd</code>/<code>cursor</code>/<code>scrollOffset</code>.</li>
+  <li>Entries sorted <strong>dirs-first, then files, alphabetical</strong>, with a leading <code>..</code> row except at the filesystem root.</li>
+  <li>Directories show <code>&lt;DIR&gt;</code>; pressing <code>s</code> computes recursive size <strong>on demand</strong> and shows it (cached on the entry).</li>
+  <li><code>F7</code>/<code>n</code> mkdir; <code>F5</code>/<code>c</code> copy (default dest = other pane's <code>cwd</code>); <code>F6</code>/<code>m</code> move; <code>F8</code>/<code>d</code> delete; <code>r</code> rename in place. Delete and overwrite are <strong>confirmed via a Dialog</strong> first.</li>
+  <li>FS-operation results and errors appear on a <strong>transient status message line</strong>, cleared on the next keypress.</li>
+  <li><code>F3</code>/<code>v</code> opens an <strong>in-app scrollable read-only viewer with syntax highlighting</strong>; <code>Esc</code> closes; large/binary files fall back to plain text.</li>
+  <li><code>F4</code>/<code>e</code> opens the file in <code>$EDITOR</code> (else <code>vim</code>) full-screen; on quit, control returns to the same pane/cursor and the file's size refreshes. <em>(Primary acceptance test.)</em></li>
+  <li><code>F2</code>/<code>u</code> opens the custom-script menu from config; missing/malformed config opens an empty menu with a hint; selecting an entry runs it with <code>cwd</code> = active pane and <code>NE_CWD</code>/<code>NE_SELECTED</code>/<code>NE_SELECTED_PATH</code> env, then a <em>Press any key to continue</em> pause, then returns and refreshes. <em>(Secondary acceptance test.)</em></li>
+  <li><code>F10</code>/<code>q</code> quits cleanly (raw mode restored). Both F-keys and letter shortcuts trigger the same actions.</li>
+  <li><code>node --test</code> passes for <code>format</code>/<code>fkeys</code>/<code>fs</code>/<code>ops</code>/<code>menu</code>; <code>npx tsc --noEmit</code> reports zero errors and confirms all syntax is erasable.</li>
+</ul>
+
+<h2>Key Decisions</h2>
+<ol>
+  <li><strong>F3 = in-app viewer using <code>cli-highlight</code>, windowed.</strong> Highlight the whole file once, <code>split('\n')</code> the ANSI output, slice the visible window per scroll (same center-clamp as <code>FileList</code>).
+    <br><span class="muted">Why: composes with the existing scroll windowing; highlighting the full file first keeps multi-line constructs (block comments/strings) correct. Impact: adds <code>cli-highlight</code> dep, an extension→language map, and a large/binary plain-text fallback.</span></li>
+  <li><strong>Dev-only typecheck from Phase 1.</strong> <code>tsconfig.json</code> with <code>erasableSyntaxOnly</code> + <code>verbatimModuleSyntax</code> + <code>allowImportingTsExtensions</code> + <code>noEmit</code>, plus <code>npm run typecheck</code>.
+    <br><span class="muted">Why: guarantees Node can run every <code>.ts</code> source untouched and catches non-erasable syntax early. Impact: <code>typescript</code> devDep; never used to build or run.</span></li>
+  <li><strong>Transient status message line</strong> in the footer for operation results/errors.
+    <br><span class="muted">Why: non-blocking feedback — success stays quiet, errors surface without a modal. Impact: <code>App</code> holds a <code>status</code> string cleared on next keypress.</span></li>
+</ol>
+
+<div class="callout corr">
+  <strong>Corrections to the source design (verified against Ink v5.2.1 source):</strong>
+  <ul>
+    <li><strong>F-key sequences are ESC-stripped by Ink.</strong> Ink removes the leading <code>\x1b</code> before calling <code>useInput</code>, so <code>fkeys.ts</code> must map the stripped forms: <strong>F1–F4</strong> arrive as <code>'OP' 'OQ' 'OR' 'OS'</code> (SS3), <strong>F5–F10</strong> as <code>'[15~' '[17~' '[18~' '[19~' '[20~' '[21~'</code> (CSI), each with <code>key.meta === true</code>. (The source doc's <code>\x1b[15~</code> is the terminal wire form, not what Ink delivers.)</li>
+    <li><strong><code>runInTerminal</code> must also toggle bracketed-paste</strong> (<code>\x1b[?2004l</code> before spawn, <code>\x1b[?2004h</code> after) in addition to <code>setRawMode(false)</code> + <code>stdin.pause()</code>, or pasted input inside vim/scripts leaks <code>\x1b[200~</code>/<code>\x1b[201~</code> artifacts.</li>
+  </ul>
+</div>
+
+<h2>Tech Stack &amp; Dependencies</h2>
+<ul>
+  <li>Runtime: <strong>Node ≥ 24</strong> (native type stripping, on by default). Confirmed installed: <code>v24.18.0</code>.</li>
+  <li>Runtime deps: <span class="tag">ink ^5</span><span class="tag">react ^18.3</span><span class="tag">htm ^3</span><span class="tag">cli-highlight ^2.1</span> <span class="muted">(no <code>react-dom</code> — Ink uses its own reconciler).</span></li>
+  <li>Dev dep: <span class="tag">typescript ^5</span> for <code>tsc --noEmit</code> only.</li>
+  <li>No JSX, no <code>tsc</code> for running. Files are <code>.ts</code>, rendered with <code>const html = htm.bind(React.createElement)</code>.</li>
+</ul>
+
+<h2>File Structure (target)</h2>
+<pre><code>node-explorer/
+  package.json            # "type":"module"; deps ink/react/htm/cli-highlight; devDep typescript; bin + scripts
+  tsconfig.json           # dev-only typecheck (noEmit, erasableSyntaxOnly, allowImportingTsExtensions, verbatimModuleSyntax)
+  README.md               # usage, keybindings, menu.json config
+  src/
+    index.ts              # entry: render(html`&lt;${App}/&gt;`)
+    types.ts              # shared type aliases (Entry, PaneState, Modal, MenuItem) — import type only
+    ui/
+      App.ts              # root: two panes, active-pane + modal + status state, global key routing
+      Pane.ts             # one pane: path header, FileList, footer
+      FileList.ts         # scrollable, cursor-tracking, viewport-windowed listing
+      Dialog.ts           # confirm modal + text-input modal (delete/copy/move confirm, mkdir/rename)
+      Viewer.ts           # F3 in-app read-only viewer: cli-highlight, windowed scroll, plain fallback  [Phase 3]
+      MenuDialog.ts       # custom-script menu overlay (list + per-entry hotkeys)                        [Phase 4]
+      StatusBar.ts        # bottom function-key hint bar + transient status message line
+      useShell.ts         # hook: runInTerminal() — suspend Ink, spawn (vim OR script), resume          [Phase 3]
+    core/
+      fs.ts               # listDir(): readdir+lstat -&gt; sorted Entry[]; sorting rules
+      ops.ts              # copy / move / delete / mkdir / rename (node:fs/promises)                     [Phase 2]
+      dirSize.ts          # on-demand recursive size walk                                                [Phase 2]
+      menu.ts             # load/parse/validate menu config file -&gt; MenuItem[]; graceful fallback        [Phase 4]
+    util/
+      format.ts           # formatSize, formatDate, column layout/padding
+      fkeys.ts            # map ESC-stripped escape sequences -&gt; F-key ids
+      lang.ts             # extension -&gt; highlight.js language id (validated via hljs.getLanguage)       [Phase 3]
+  test/
+    format.test.js  fkeys.test.js  fs.test.js  ops.test.js  menu.test.js   # node:test units</code></pre>
+
+<!-- ================= PHASE 1 ================= -->
+<h2>Phase 1 — Scaffold &amp; Read-Only Two-Pane Navigation</h2>
+<div class="phase">
+<p><strong>Goal:</strong> A runnable two-pane explorer. Both panes list a directory, sort correctly, scroll, and navigate independently with Tab / arrows / Enter / <code>..</code>. Establishes the htm+Ink pattern, type-stripping config, F-key decoding, and the status line — all wired but only navigation actions active.</p>
+
+<h4>Tasks</h4>
+<ul class="checklist">
+  <li><input type="checkbox"> <code>package.json</code>: <code>"type":"module"</code>; deps <code>ink@^5</code>, <code>react@^18.3</code>, <code>htm@^3</code>; devDep <code>typescript@^5</code>; scripts <code>start</code> (<code>node src/index.ts</code>), <code>test</code> (<code>node --test</code>), <code>typecheck</code> (<code>tsc --noEmit</code>); <code>bin</code> → <code>src/index.ts</code>; <code>engines.node</code> ≥ 24. Run <code>npm install</code>.</li>
+  <li><input type="checkbox"> <code>tsconfig.json</code>: <code>noEmit</code>, <code>erasableSyntaxOnly</code>, <code>allowImportingTsExtensions</code>, <code>verbatimModuleSyntax</code>, <code>module</code>/<code>moduleResolution</code> = <code>nodenext</code>, <code>target</code> <code>es2023</code>, <code>jsx</code> not set, <code>strict</code>.</li>
+  <li><input type="checkbox"> <code>src/types.ts</code>: <code>Entry</code> (<code>{ name, isDir, size, mtime, sizeComputed? }</code>), <code>PaneState</code> (<code>{ cwd, entries, cursor, scrollOffset }</code>), <code>Modal</code> union, <code>MenuItem</code>. Export via <code>export type</code> only (no runtime body).</li>
+  <li><input type="checkbox"> <code>src/util/format.ts</code>: <code>formatSize(bytes)</code> (human units), <code>formatDate(mtime)</code>, and a column/padding helper for the listing row (name / size / mtime).</li>
+  <li><input type="checkbox"> <code>src/util/fkeys.ts</code>: <code>decodeFKey(input, key)</code> mapping <strong>ESC-stripped</strong> sequences → ids only when <code>key.meta === true</code> (so a bare <code>[15~</code> in file content / paste is not misread as F5). F1–F4 = <code>OP/OQ/OR/OS</code>; F5–F10 = <code>[15~ [17~ [18~ [19~ [20~ [21~</code>. Only the bound keys need actions (F2/F3/F4/F5/F6/F7/F8/F10); F1/F9 may be omitted or decoded-but-unbound. Returns <code>null</code> for non-F-key input.</li>
+  <li><input type="checkbox"> <code>src/core/fs.ts</code>: <code>listDir(cwd)</code> → <code>fs.readdir(cwd,{withFileTypes:true})</code> + per-entry <code>fs.lstat</code> for size/mtime (skip symlink targets); sort <strong>dirs-first, then files, alphabetical (locale-aware, case-insensitive)</strong>; prepend <code>..</code> unless <code>cwd</code> is the fs root. Directory <code>size</code> starts unknown → rendered <code>&lt;DIR&gt;</code>.</li>
+  <li><input type="checkbox"> <code>src/ui/FileList.ts</code>: <code>windowFor(cursor,total,height)</code> center-clamp windowing (per disk-reclaim); render visible slice, remap index via <code>start+i</code>; highlight cursor row (<code>inverse</code>); dim the inactive pane's cursor.</li>
+  <li><input type="checkbox"> <code>src/ui/Pane.ts</code>: path header (truncate-middle) + <code>FileList</code> + footer; receives <code>active</code> flag.</li>
+  <li><input type="checkbox"> <code>src/ui/StatusBar.ts</code>: F-key hint bar plus a <strong>status message line</strong> prop (last action/error; empty by default).</li>
+  <li><input type="checkbox"> <code>src/ui/App.ts</code>: two <code>PaneState</code>, <code>active: 0|1</code>, <code>modal</code> (none for now), <code>status</code> string. <code>useInput</code> routes: <strong>Tab</strong> toggles active; arrows/<code>PgUp</code>/<code>PgDn</code> move cursor (clamped); <strong>Enter</strong> on dir → chdir (reset cursor), on <code>..</code> → parent, on file → no-op stub; <code>F10</code>/<code>q</code> → <code>useApp().exit()</code>. Any keypress clears <code>status</code>. <code>viewHeight = max(3, (process.stdout.rows||24) - chrome)</code>.</li>
+  <li><input type="checkbox"> <code>src/index.ts</code>: <code>#!/usr/bin/env node</code>; <code>render(html`&lt;${App}/&gt;`)</code>; initial <code>cwd</code> = <code>process.cwd()</code> for both panes.</li>
+  <li><input type="checkbox"> <code>README.md</code>: project summary, install/run, keybindings table (mark F2/F3/F4/menu as later phases).</li>
+  <li><input type="checkbox"> Tests: <code>test/format.test.js</code> (size/date formatting, padding), <code>test/fkeys.test.js</code> (each F-key sequence + <code>key.meta</code> → id; a bare <code>[15~</code> without <code>key.meta</code> → null; non-F-key → null), <code>test/fs.test.js</code> (sorting order dirs-first/alpha, <code>..</code> presence and root suppression against a temp dir).</li>
+</ul>
+
+<h4>Automated Verification</h4>
+<ul class="checklist">
+  <li><input type="checkbox"> <code>npm install</code> completes without errors.</li>
+  <li><input type="checkbox"> <code>node --test</code> passes (format, fkeys, fs).</li>
+  <li><input type="checkbox"> <code>npx tsc --noEmit</code> reports zero errors (confirms erasable syntax).</li>
+  <li><input type="checkbox"> <code>node -e "import('./src/ui/App.ts')"</code> (or <code>node --check</code> path equivalent) imports without a type-stripping/runtime error.</li>
+</ul>
+
+<h4>Manual Verification <span class="pill">milestone</span></h4>
+<ul class="checklist">
+  <li><input type="checkbox"> <code>npm start</code> shows two panes side by side listing the current dir.</li>
+  <li><input type="checkbox"> Tab switches the active pane (cursor highlight moves; inactive pane dimmed).</li>
+  <li><input type="checkbox"> Arrows move the cursor; the selection stays in view past the bottom (windowing); PgUp/PgDn page.</li>
+  <li><input type="checkbox"> Enter descends into a dir; <code>..</code> goes up; each pane navigates independently; no <code>..</code> at fs root.</li>
+  <li><input type="checkbox"> <code>F10</code>/<code>q</code> exits cleanly and the terminal is restored.</li>
+</ul>
+</div>
+
+<!-- ================= PHASE 2 ================= -->
+<h2>Phase 2 — File Operations, Dialogs &amp; Directory Size</h2>
+<div class="phase">
+<p><strong>Goal:</strong> Full CRUD from the UI with confirmation/input dialogs, Norton-Commander dest defaults, error surfacing on the status line, and on-demand recursive directory sizing.</p>
+
+<h4>Tasks</h4>
+<ul class="checklist">
+  <li><input type="checkbox"> <code>src/core/ops.ts</code> (<code>node:fs/promises</code>): <code>copy(src,dest)</code> → <code>fs.cp(src,dest,{recursive:true})</code>; <code>move(src,dest)</code> → <code>fs.rename</code> with <code>EXDEV</code> cross-device fallback to <code>cp</code>+<code>rm</code>; <code>remove(path)</code> → <code>fs.rm(path,{recursive:true,force:true})</code>; <code>makeDir(path)</code> → <code>fs.mkdir</code>; <code>rename(src,dest)</code> → <code>fs.rename</code>. Each returns a result/throws a typed error for the status line. Add an <code>exists(path)</code> helper for overwrite detection.</li>
+  <li><input type="checkbox"> <code>src/core/dirSize.ts</code>: recursive <code>lstat</code> walk summing file sizes (skip symlinks); returns total bytes. Result cached on the <code>Entry</code> (<code>size</code> + <code>sizeComputed=true</code>).</li>
+  <li><input type="checkbox"> <code>src/ui/Dialog.ts</code>: two modes — <strong>confirm</strong> (message + Yes/No, Enter=confirm, Esc/N=cancel) and <strong>text-input</strong> (label + editable field, Enter=submit, Esc=cancel). Driven by <code>modal</code> state; routes input while open.</li>
+  <li><input type="checkbox"> Wire actions in <code>App.ts</code> (F-key + letter → same handler):
+    <ul>
+      <li><input type="checkbox"> <code>F7</code>/<code>n</code> → <code>input-mkdir</code> dialog → <code>makeDir</code> in active pane; refresh.</li>
+      <li><input type="checkbox"> <code>F5</code>/<code>c</code> → <code>confirm-copy</code> (default dest = <strong>other pane's</strong> <code>cwd</code>, shown) → <code>copy</code>; if dest exists, escalate to overwrite confirm; refresh both panes.</li>
+      <li><input type="checkbox"> <code>F6</code>/<code>m</code> → <code>confirm-move</code> (dest = other pane) → <code>move</code>; overwrite confirm as above; refresh both.</li>
+      <li><input type="checkbox"> <code>F8</code>/<code>d</code> → <code>confirm-delete</code> → <code>remove</code>; refresh; clamp cursor.</li>
+      <li><input type="checkbox"> <code>r</code> → <code>input-rename</code> (prefilled with current name) → <code>rename</code> in place; refresh; keep cursor on renamed entry.</li>
+      <li><input type="checkbox"> <code>s</code> → <code>dirSize</code> on the hovered <code>&lt;DIR&gt;</code>; replace <code>&lt;DIR&gt;</code> with the formatted size (cached).</li>
+    </ul>
+  </li>
+  <li><input type="checkbox"> Success/error → <code>status</code> line (e.g. <code>✓ Copied report.pdf → /home/other</code> / <code>Permission denied</code>); guard against operating on the <code>..</code> row.</li>
+  <li><input type="checkbox"> Tests: <code>test/ops.test.js</code> (temp-dir round-trips: mkdir → copy → rename → move → delete; cross-device fallback path exercised or documented as skipped), plus a <code>dirSize</code> case (known tree → expected total).</li>
+  <li><input type="checkbox"> README: fill in the operations keybindings and dest-default behavior.</li>
+</ul>
+
+<h4>Automated Verification</h4>
+<ul class="checklist">
+  <li><input type="checkbox"> <code>node --test</code> passes including <code>ops</code> + <code>dirSize</code>.</li>
+  <li><input type="checkbox"> <code>npx tsc --noEmit</code> reports zero errors.</li>
+</ul>
+
+<h4>Manual Verification <span class="pill">milestone</span></h4>
+<ul class="checklist">
+  <li><input type="checkbox"> <code>F7</code>/<code>n</code> creates a folder; it appears in the list.</li>
+  <li><input type="checkbox"> <code>F5</code>/<code>c</code> on a file copies to the other pane (default dest shown); the file appears there.</li>
+  <li><input type="checkbox"> <code>F6</code>/<code>m</code> moves; <code>F8</code>/<code>d</code> deletes after confirm; <code>r</code> renames in place.</li>
+  <li><input type="checkbox"> Copying/moving onto an existing name triggers an overwrite confirm.</li>
+  <li><input type="checkbox"> <code>s</code> on a <code>&lt;DIR&gt;</code> row replaces <code>&lt;DIR&gt;</code> with the recursive size.</li>
+  <li><input type="checkbox"> A failing op (e.g. delete a protected path) shows the error on the status line without crashing.</li>
+</ul>
+</div>
+
+<!-- ================= PHASE 3 ================= -->
+<h2>Phase 3 — Shell Integration: Edit-in-Vim (F4) &amp; In-App Viewer (F3)</h2>
+<div class="phase">
+<p><strong>Goal:</strong> The delicate TTY hand-off. <code>runInTerminal</code> suspends Ink, hands the terminal to a child process, and resumes cleanly. F4 edits in vim; F3 opens the in-app highlighted read-only viewer.</p>
+
+<h4>Tasks</h4>
+<ul class="checklist">
+  <li><input type="checkbox"> Add dep <code>cli-highlight@^2.1</code>; <code>npm install</code>.</li>
+  <li><input type="checkbox"> <code>src/ui/useShell.ts</code>: <code>runInTerminal(cmdOrArgs, opts)</code> using <code>useStdin()</code> → <code>{ setRawMode, isRawModeSupported, stdin }</code>:
+    <ul>
+      <li><input type="checkbox"> If <code>!isRawModeSupported</code> → graceful no-op (return early).</li>
+      <li><input type="checkbox"> <code>setRawMode(false)</code>; <code>stdin.pause?.()</code>; write <code>\x1b[?2004l</code> (disable bracketed paste).</li>
+      <li><input type="checkbox"> <code>spawnSync(...)</code> with <code>stdio:'inherit'</code> (vim: <code>spawnSync(editor,[absPath])</code>; script: <code>spawnSync(cmd,{shell:true,cwd,env})</code>).</li>
+      <li><input type="checkbox"> If <code>opts.pause</code>: write <em>Press any key to continue…</em> and read one keypress (<code>fs.readSync(0, …)</code>) <strong>before</strong> restoring — while stdin is still paused/raw-off (Phase 4 uses this).</li>
+      <li><input type="checkbox"> Restore (last): write <code>\x1b[?2004h</code>; <code>stdin.resume?.()</code>; <code>setRawMode(true)</code> — so Ink recaptures stdin only after any pause read.</li>
+    </ul>
+  </li>
+  <li><input type="checkbox"> <code>src/util/lang.ts</code>: extension → highlight.js language id map, validated via <code>getLanguage(id)</code>; returns <code>undefined</code> (auto/none) for unknown.</li>
+  <li><input type="checkbox"> <code>src/ui/Viewer.ts</code>: read the file; if size &gt; threshold (~1 MB) or binary (NUL-byte sniff) → plain text; else <code>highlight(code,{language})</code> once, <code>split('\n')</code> → ANSI lines. Windowed scroll (reuse <code>windowFor</code>): ↑/↓ line, PgUp/PgDn page, <code>Esc</code> closes. Header shows file name + size; each visible line rendered as <code>&lt;Text wrap="truncate-end"&gt;</code>.</li>
+  <li><input type="checkbox"> Wire <code>F4</code>/<code>e</code> in <code>App.ts</code>: on a file → <code>runInTerminal($EDITOR||'vim', absPath)</code>; on return, refresh the active pane (size may have changed) and keep pane/cursor. No-op on a dir / <code>..</code>.</li>
+  <li><input type="checkbox"> Wire <code>F3</code>/<code>v</code> in <code>App.ts</code>: open <code>Viewer</code> modal on a file; ignore on a dir / <code>..</code>.</li>
+  <li><input type="checkbox"> README: document F3 (viewer + highlighting + fallback) and F4 (<code>$EDITOR</code>) behavior.</li>
+</ul>
+
+<h4>Automated Verification</h4>
+<ul class="checklist">
+  <li><input type="checkbox"> <code>npx tsc --noEmit</code> reports zero errors.</li>
+  <li><input type="checkbox"> <code>node --test</code> still passes (optional: a <code>lang.ts</code> ext→id unit test; the TTY <code>runInTerminal</code> path is verified manually).</li>
+</ul>
+
+<h4>Manual Verification <span class="pill">milestone — primary acceptance</span></h4>
+<ul class="checklist">
+  <li><input type="checkbox"> <code>F4</code>/<code>e</code> on a file → <strong>vim opens full-screen; on <code>:q</code> control returns to Node Explorer at the same pane/cursor</strong>; the file's size refreshes. No leaked escape sequences (background-color query / bracketed paste) after return.</li>
+  <li><input type="checkbox"> <code>F3</code>/<code>v</code> on a source file → highlighted, scrollable read-only view; ↑/↓ and PgUp/PgDn scroll; <code>Esc</code> closes to the same pane/cursor.</li>
+  <li><input type="checkbox"> <code>F3</code> on a large or binary file → plain-text fallback, no crash, no garbled colors.</li>
+  <li><input type="checkbox"> Ctrl+C still exits cleanly during/after a spawn (Ink's raw-mode handling intact).</li>
+</ul>
+</div>
+
+<!-- ================= PHASE 4 ================= -->
+<h2>Phase 4 — Custom-Script User Menu (F2)</h2>
+<div class="phase">
+<p><strong>Goal:</strong> An F2 user menu of configured scripts that run in the terminal (reusing <code>runInTerminal</code>) with the active pane as <code>cwd</code> and the hovered entry exposed via env, followed by a <em>Press any key to continue</em> pause.</p>
+
+<h4>Tasks</h4>
+<ul class="checklist">
+  <li><input type="checkbox"> <code>src/core/menu.ts</code>: <code>loadMenu()</code> resolves the config path — <code>$NODE_EXPLORER_MENU</code> if set, else <code>~/.config/node-explorer/menu.json</code>; parse JSON; validate each <code>{ key?, label, command }</code>; drop invalid entries. <strong>Missing or malformed file → return empty list</strong> (with a reason) rather than throwing.</li>
+  <li><input type="checkbox"> <code>src/ui/MenuDialog.ts</code>: overlay listing entries (<code>label</code> + optional hotkey); choose via arrows+Enter or by pressing an entry's <code>key</code>; <code>Esc</code> cancels. Empty menu shows a hint pointing at the config path.</li>
+  <li><input type="checkbox"> Wire <code>F2</code>/<code>u</code> in <code>App.ts</code>: open <code>MenuDialog</code>; on select, run via <code>runInTerminal(item.command, { shell:true, cwd: activePane.cwd, env: { ...process.env, NE_CWD, NE_SELECTED, NE_SELECTED_PATH }, pause:true })</code>.</li>
+  <li><input type="checkbox"> <em>Press any key to continue…</em> pause: after the child exits, write the prompt, read one keypress (<code>fs.readSync(0, …)</code>) before resuming Ink, then refresh the active pane (the script may have changed the dir).</li>
+  <li><input type="checkbox"> Tests: <code>test/menu.test.js</code> — valid config parses to entries; malformed JSON → empty + reason; missing file → empty + reason; invalid entries filtered.</li>
+  <li><input type="checkbox"> README: document the menu, the config-path resolution order, the JSON shape, and the <code>NE_*</code> env vars; include an example <code>menu.json</code>.</li>
+</ul>
+
+<h4>Automated Verification</h4>
+<ul class="checklist">
+  <li><input type="checkbox"> <code>node --test</code> passes including <code>menu</code> (valid / malformed / missing / invalid-entry cases).</li>
+  <li><input type="checkbox"> <code>npx tsc --noEmit</code> reports zero errors.</li>
+</ul>
+
+<h4>Manual Verification <span class="pill">milestone — secondary acceptance</span></h4>
+<ul class="checklist">
+  <li><input type="checkbox"> With a configured <code>menu.json</code>, <code>F2</code>/<code>u</code> lists the entries; arrows+Enter and per-entry hotkeys both select.</li>
+  <li><input type="checkbox"> Selecting e.g. <em>Git status</em> runs it in the terminal with <code>cwd</code> = active pane, shows <code>Press any key to continue…</code>, then returns to the same pane/cursor with the listing refreshed.</li>
+  <li><input type="checkbox"> A script that reads <code>$NE_SELECTED</code>/<code>$NE_SELECTED_PATH</code>/<code>$NE_CWD</code> sees the correct hovered entry and directory.</li>
+  <li><input type="checkbox"> Missing/malformed <code>menu.json</code> → menu opens empty with a hint; no crash.</li>
+</ul>
+</div>
+
+<h2>Cross-Cutting Notes</h2>
+<ul>
+  <li><strong>Type-stripping rules</strong> (enforced by tsconfig, verified by <code>tsc --noEmit</code>): explicit <code>.ts</code> extensions on local imports; <code>import type</code> for type-only imports; <strong>no</strong> enums, runtime namespaces, parameter properties, or <code>declare</code> fields.</li>
+  <li><strong>Both key schemes</strong> (F-keys via <code>fkeys.ts</code>, letters <code>v e c m n d r q s u</code> read from <code>input</code>) call the same action handlers. When a modal/viewer/menu is open, input routes there instead of pane navigation.</li>
+  <li><strong>Tests are <code>.js</code></strong> importing <code>.ts</code> sources — Node strips types on import; run with <code>node --test</code>.</li>
+  <li><strong>Refresh discipline:</strong> after any op / edit / script, re-run <code>listDir</code> for affected pane(s) and clamp the cursor.</li>
+</ul>
+
+<h2>Out of Scope for v1 (possible follow-ups)</h2>
+<p>Multi-file marking (Insert key), archive browsing, built-in text editor, filesystem watching/auto-refresh,
+  custom keybinding config. Menu follow-ups: an other-pane <code>cwd</code> env var, inline macro placeholders
+  (e.g. <code>%f</code>), a per-project menu file. Viewer follow-ups: theme selection, line numbers, search.</p>
+
+<h2>References</h2>
+<ul>
+  <li><a href="../../node-explorer-plan.html">Source design — docs/node-explorer-plan.html</a></li>
+  <li><a href="https://github.com/xndlnk/disk-reclaim">disk-reclaim</a> — reference project &amp; stack (plain <code>.js</code>; <code>windowFor</code> center-clamp, <code>viewHeight = max(3, rows-7)</code>)</li>
+  <li><a href="https://github.com/vadimdemedes/ink">Ink v5</a> — <code>useStdin</code> (<code>setRawMode</code>/<code>isRawModeSupported</code>/<code>stdin</code>), <code>useInput</code> (no F-keys, ESC-stripped input)</li>
+  <li><a href="https://www.npmjs.com/package/cli-highlight">cli-highlight</a> — <code>highlight(code,{language})</code> → ANSI string</li>
+  <li><a href="https://ratatui.rs/recipes/apps/spawn-vim/">Ratatui: Spawn External Editor (Vim)</a> — the escape-sequence-leak gotcha</li>
+  <li><a href="https://invisible-island.net/xterm/xterm-function-keys.html">xterm function-key sequences</a></li>
+</ul>
+
+</main>
+</body>
+</html>
