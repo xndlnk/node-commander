@@ -1,5 +1,6 @@
 import React from 'react';
 import { Box, useApp, useInput } from 'ink';
+import { writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import type { Modal, PaneState, Entry, MenuItem } from '../types.ts';
 import { listDir } from '../core/fs.ts';
@@ -41,6 +42,21 @@ export function App() {
 
   const closeModal = useCallback(() => setModal({ type: 'none' }), []);
   const runInTerminal = useShell();
+
+  // Quit, first recording the active pane's directory so a shell wrapper can
+  // `cd` there. The child can't change the parent shell's cwd itself, so we
+  // write it to the file named by $NC_CWD_FILE (set by the wrapper function).
+  const quit = useCallback(() => {
+    const cwdFile = process.env['NC_CWD_FILE'];
+    if (cwdFile) {
+      try {
+        writeFileSync(cwdFile, panes[active].cwd);
+      } catch {
+        // Best-effort: still quit even if we can't write the file.
+      }
+    }
+    exit();
+  }, [panes, active, exit]);
 
   // Load a directory into a pane. Cursor placement: onto keepName if found,
   // else clamped to keepCursor, else 0.
@@ -300,9 +316,9 @@ export function App() {
       const selected = sel && sel.name !== '..' ? sel.name : '';
       const env: NodeJS.ProcessEnv = {
         ...process.env,
-        NE_CWD: activePane.cwd,
-        NE_SELECTED: selected,
-        NE_SELECTED_PATH: selected ? join(activePane.cwd, selected) : '',
+        NC_CWD: activePane.cwd,
+        NC_SELECTED: selected,
+        NC_SELECTED_PATH: selected ? join(activePane.cwd, selected) : '',
       };
       // shell + pause: run the script, then "Press any key to continue…".
       runInTerminal(item.command, {
@@ -376,7 +392,7 @@ export function App() {
       return;
     }
     if (input === 'q') {
-      exit();
+      quit();
       return;
     }
   });
@@ -408,7 +424,7 @@ export function App() {
         doDelete();
         break;
       case 'F10':
-        exit();
+        quit();
         break;
       // F2 (menu) is wired in Phase 4.
     }

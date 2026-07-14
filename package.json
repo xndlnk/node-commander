@@ -1,10 +1,10 @@
 {
-  "name": "node-explorer",
+  "name": "node-commander",
   "version": "0.1.0",
   "description": "A Norton Commander–style two-pane terminal file manager, built on Node 24 native type stripping — no build step.",
   "type": "module",
   "bin": {
-    "node-explorer": "src/index.ts"
+    "node-commander": "src/index.ts"
   },
   "scripts": {
     "start": "node src/index.ts",

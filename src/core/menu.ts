@@ -10,14 +10,14 @@ export type MenuResult = {
 };
 
 // Config resolution order (first existing file wins):
-//   1. $NODE_EXPLORER_MENU, if set
-//   2. ~/.config/node-explorer/menu.json  (per-user default)
+//   1. $NODE_COMMANDER_MENU, if set
+//   2. ~/.config/node-commander/menu.json  (per-user default)
 //   3. ./menu.json in the launch directory (project-local, handy in dev)
 export function candidatePaths(): string[] {
-  const override = process.env['NODE_EXPLORER_MENU'];
+  const override = process.env['NODE_COMMANDER_MENU'];
   if (override && override.trim()) return [override];
   return [
-    join(homedir(), '.config', 'node-explorer', 'menu.json'),
+    join(homedir(), '.config', 'node-commander', 'menu.json'),
     join(process.cwd(), 'menu.json'),
   ];
 }

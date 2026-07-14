@@ -1,4 +1,4 @@
-# Node Explorer
+# Node Commander
 
 A Norton Commander–style two-pane terminal file manager. Built on **Node ≥ 24**
 native type stripping — the `.ts` sources run directly, with **no compiler and no
@@ -17,6 +17,43 @@ npm start          # node src/index.ts
 ```
 
 Both panes open on the current working directory. Quit with `F10` or `q`.
+
+## Change directory on quit
+
+A program can't change the directory of the shell that launched it, so — like
+`ranger`/`nnn`/`yazi` — Node Commander writes the active pane's directory to the
+file named by `$NC_CWD_FILE` on quit, and a small shell wrapper `cd`s there.
+
+The wrapper is shell-specific (only the `$NC_CWD_FILE` contract is shared).
+Adjust the path to `src/index.ts` for your checkout.
+
+**bash / zsh** — add to `~/.bashrc` / `~/.zshrc`:
+
+```sh
+ne() {
+  local tmp; tmp="$(mktemp)"
+  NC_CWD_FILE="$tmp" node /path/to/node-commander/src/index.ts "$@"
+  local dir; dir="$(cat "$tmp")"
+  rm -f "$tmp"
+  [ -n "$dir" ] && [ -d "$dir" ] && cd "$dir"
+}
+```
+
+**fish** — save as `~/.config/fish/functions/ne.fish` (autoloaded):
+
+```fish
+function ne
+    set -l tmp (mktemp)
+    env NC_CWD_FILE=$tmp node /path/to/node-commander/src/index.ts $argv
+    set -l dir (cat $tmp)
+    rm -f $tmp
+    test -n "$dir"; and test -d "$dir"; and cd $dir
+end
+```
+
+Now run `ne`, navigate around, quit — your shell lands in the last directory you
+were in. Without `$NC_CWD_FILE` set (e.g. plain `npm start`), quitting behaves as
+before and leaves your shell where it was.
 
 ## Keybindings
 
@@ -62,14 +99,14 @@ press an entry's single-key hotkey; `Esc` cancels.
 
 The selected script runs in the terminal with the **active pane** as its working
 directory, followed by a _Press any key to continue…_ pause, then control returns
-to Node Explorer and the pane refreshes.
+to Node Commander and the pane refreshes.
 
 ### Config file
 
 Resolved in order (first existing file wins):
 
-1. `$NODE_EXPLORER_MENU`, if set.
-2. `~/.config/node-explorer/menu.json` (per-user default).
+1. `$NODE_COMMANDER_MENU`, if set.
+2. `~/.config/node-commander/menu.json` (per-user default).
 3. `./menu.json` in the launch directory (project-local — handy in dev; a sample
    is included in this repo).
 
@@ -92,11 +129,11 @@ hotkey) is optional. Invalid entries are dropped.
 
 | Variable           | Value                                               |
 | ------------------ | --------------------------------------------------- |
-| `NE_CWD`           | Active pane's directory (also the script's `cwd`)   |
-| `NE_SELECTED`      | Name of the hovered entry (empty on the `..` row)   |
-| `NE_SELECTED_PATH` | Absolute path of the hovered entry                  |
+| `NC_CWD`           | Active pane's directory (also the script's `cwd`)   |
+| `NC_SELECTED`      | Name of the hovered entry (empty on the `..` row)   |
+| `NC_SELECTED_PATH` | Absolute path of the hovered entry                  |
 
-Example command using them: `"command": "echo Editing $NE_SELECTED in $NE_CWD"`.
+Example command using them: `"command": "echo Editing $NC_SELECTED in $NC_CWD"`.
 
 ## Development
 
