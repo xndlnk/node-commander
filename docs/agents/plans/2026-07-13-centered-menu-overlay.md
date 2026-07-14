@@ -156,7 +156,7 @@ the behaviour with a render test.
 
 **Tasks**:
 
-- [ ] Add `src/ui/CenteredOverlay.ts`: a presentational component that renders an
+- [x] Add `src/ui/CenteredOverlay.ts`: a presentational component that renders an
   absolute, full-area centering Box.
   ```ts
   import { Box } from 'ink';
@@ -181,15 +181,15 @@ the behaviour with a render test.
     `;
   }
   ```
-- [ ] In `src/ui/App.ts`, import `CenteredOverlay` (alongside the other `./` imports at
+- [x] In `src/ui/App.ts`, import `CenteredOverlay` (alongside the other `./` imports at
   `:8-16`).
-- [ ] In `src/ui/App.ts`, add a full-terminal rows value near the existing size reads
+- [x] In `src/ui/App.ts`, add a full-terminal rows value near the existing size reads
   (`:75-77`), reusing the same `|| 24` fallback that `viewHeight` and the Viewer branch
   already use:
   ```ts
   const totalRows = process.stdout.rows || 24;
   ```
-- [ ] In `src/ui/App.ts`, replace the two inline modal branches (`:436-441`) with a
+- [x] In `src/ui/App.ts`, replace the two inline modal branches (`:436-441`) with a
   single centered overlay wrapping the active modal element:
   ```ts
   ${modal.type === 'menu' || modal.type === 'confirm' || modal.type === 'input'
@@ -201,7 +201,7 @@ the behaviour with a render test.
         </${CenteredOverlay}>`
     : null}
   ```
-- [ ] Add `test/overlay.test.js`: render `CenteredOverlay` (with a bordered child box)
+- [x] Add `test/overlay.test.js`: render `CenteredOverlay` (with a bordered child box)
   over a two-pane stub through a fake stdout, then assert on the captured frame:
   - pane marker text (e.g. `file1`, `fileA`) is still present → panes visible;
   - the child box's content line has leading whitespace before its left border and the
@@ -217,27 +217,36 @@ the behaviour with a render test.
   }
   // render(tree, { stdout, patchConsole: false }); read last frame after a tick; unmount.
   ```
-- [ ] Update `README.md` (F2 section around `:57-75`) to note the user menu now appears
+- [x] Update `README.md` (F2 section around `:57-75`) to note the user menu now appears
   centered over the panes.
 
 **Automated Verification**:
-- [ ] `npm run typecheck` passes (`tsc --noEmit`).
-- [ ] `node --test` passes, including the new `test/overlay.test.js`.
-- [ ] `test/overlay.test.js` asserts panes text is present in the rendered frame.
-- [ ] `test/overlay.test.js` asserts the centered box is offset from both the left edge
+- [x] `npm run typecheck` passes (`tsc --noEmit`).
+- [x] `node --test` passes, including the new `test/overlay.test.js`.
+- [x] `test/overlay.test.js` asserts panes text is present in the rendered frame.
+- [x] `test/overlay.test.js` asserts the centered box is offset from both the left edge
   and the top edge (i.e. centered, not inline).
 
 **Manual Verification**:
-- [ ] Run `npm start`; press `F2` (or `u`) — the user menu appears centered over both
+- [x] Run `npm start`; press `F2` (or `u`) — the user menu appears centered over both
   panes, panes still visible around it; `↑/↓` + Enter and Esc still work.
-- [ ] Press `F7` (create directory) and `F8` (delete) — the input and confirm dialogs
+- [x] Press `F7` (create directory) and `F8` (delete) — the input and confirm dialogs
   appear centered; typing/Enter/Esc still work.
-- [ ] Press `F3` on a file — the Viewer still opens as a full-screen takeover
+- [x] Press `F3` on a file — the Viewer still opens as a full-screen takeover
   (unchanged).
 
 ## Implementation Notes
 
 During implementation, document user feedback, problems, and decisions here.
+
+- The absolute overlay is only visible where in-flow content already fills the row.
+  If the flow content is shorter than the overlay's height, the vertically-centered
+  child lands below the output buffer and is clipped. In the real `App` this is a
+  non-issue (panes render at near-full terminal height — see
+  `0d6413a`), but the `test/overlay.test.js` pane stub had to be given an explicit
+  `height=${rows}` so the centered box lands within the rendered frame. The
+  centering assertion checks the text's column position (offset from both edges)
+  rather than leading whitespace, since each row begins with the pane's `│` border.
 
 ## References
 

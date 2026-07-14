@@ -10,6 +10,7 @@ import { StatusBar } from './StatusBar.ts';
 import { Dialog } from './Dialog.ts';
 import { Viewer } from './Viewer.ts';
 import { MenuDialog } from './MenuDialog.ts';
+import { CenteredOverlay } from './CenteredOverlay.ts';
 import { useFKeys } from './useFKeys.ts';
 import { useShell } from './useShell.ts';
 import { formatSize } from '../util/format.ts';
@@ -74,6 +75,7 @@ export function App() {
 
   const viewHeight = Math.max(3, (process.stdout.rows || 24) - CHROME_ROWS);
   const totalWidth = process.stdout.columns || 80;
+  const totalRows = process.stdout.rows || 24;
   const paneWidth = Math.floor(totalWidth / 2);
 
   const activePane = panes[active];
@@ -433,11 +435,13 @@ export function App() {
         <${Pane} pane=${panes[0]} active=${active === 0} height=${viewHeight} width=${paneWidth} />
         <${Pane} pane=${panes[1]} active=${active === 1} height=${viewHeight} width=${paneWidth} />
       </${Box}>
-      ${modal.type === 'confirm' || modal.type === 'input'
-        ? html`<${Dialog} modal=${modal} />`
-        : null}
-      ${modal.type === 'menu'
-        ? html`<${MenuDialog} width=${totalWidth} onSelect=${onMenuSelect} onClose=${closeModal} />`
+      ${modal.type === 'menu' || modal.type === 'confirm' || modal.type === 'input'
+        ? html`
+            <${CenteredOverlay} width=${totalWidth} height=${totalRows}>
+              ${modal.type === 'menu'
+                ? html`<${MenuDialog} width=${totalWidth} onSelect=${onMenuSelect} onClose=${closeModal} />`
+                : html`<${Dialog} modal=${modal} />`}
+            </${CenteredOverlay}>`
         : null}
       <${StatusBar} status=${status} />
     </${Box}>
