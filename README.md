@@ -30,7 +30,7 @@ Adjust the path to `src/index.ts` for your checkout.
 **bash / zsh** — add to `~/.bashrc` / `~/.zshrc`:
 
 ```sh
-ne() {
+nc() {
   local tmp; tmp="$(mktemp)"
   NC_CWD_FILE="$tmp" node /path/to/node-commander/src/index.ts "$@"
   local dir; dir="$(cat "$tmp")"
@@ -39,10 +39,10 @@ ne() {
 }
 ```
 
-**fish** — save as `~/.config/fish/functions/ne.fish` (autoloaded):
+**fish** — save as `~/.config/fish/functions/nc.fish` (autoloaded):
 
 ```fish
-function ne
+function nc
     set -l tmp (mktemp)
     env NC_CWD_FILE=$tmp node /path/to/node-commander/src/index.ts $argv
     set -l dir (cat $tmp)
@@ -51,7 +51,7 @@ function ne
 end
 ```
 
-Now run `ne`, navigate around, quit — your shell lands in the last directory you
+Now run `nc`, navigate around, quit — your shell lands in the last directory you
 were in. Without `$NC_CWD_FILE` set (e.g. plain `npm start`), quitting behaves as
 before and leaves your shell where it was.
 
