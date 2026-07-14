@@ -5,6 +5,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { render, Box, Text } from 'ink';
 import { CenteredOverlay } from '../src/ui/CenteredOverlay.ts';
 import { MenuDialog } from '../src/ui/MenuDialog.ts';
+import { Dialog } from '../src/ui/Dialog.ts';
 import { html } from '../src/ui/html.ts';
 
 // Minimal stdout stand-in that captures every frame Ink writes.
@@ -140,15 +141,51 @@ test('MenuDialog: panes do not bleed through the menu interior', async () => {
 
   // On every row the menu border spans (between its two vertical borders), no
   // backdrop sentinel may show — the interior must be fully painted.
-  const menuRows = lines.filter((l) => (l.match(/│/g) ?? []).length >= 2);
-  assert.ok(menuRows.length >= 2, 'menu interior rows found');
-  for (const row of menuRows) {
-    const left = row.indexOf('│');
-    const right = row.lastIndexOf('│');
-    const interior = row.slice(left + 1, right);
-    assert.ok(
-      !interior.includes('#'),
-      `backdrop bled into menu interior: ${JSON.stringify(row)}`,
-    );
-  }
+  assertNoBleed(lines);
 });
+
+// Between the two vertical borders of every bordered row, no backdrop sentinel
+// may show — the interior must be fully painted.
+function assertNoBleed(lines) {
+  const boxRows = lines.filter((l) => (l.match(/│/g) ?? []).length >= 2);
+  assert.ok(boxRows.length >= 2, 'bordered interior rows found');
+  for (const row of boxRows) {
+    const interior = row.slice(row.indexOf('│') + 1, row.lastIndexOf('│'));
+    assert.ok(!interior.includes('#'), `backdrop bled into interior: ${JSON.stringify(row)}`);
+  }
+}
+
+// A confirm dialog whose title is far shorter than its message: the short rows
+// must still be opaque out to the box width, not just the widest line.
+function DialogScene({ cols, rows, modal }) {
+  const backdrop = Array.from(
+    { length: rows },
+    (_, i) => html`<${Text} key=${i}>${'#'.repeat(cols)}</${Text}>`,
+  );
+  return html`
+    <${Box} flexDirection="column">
+      <${Box} flexDirection="column">${backdrop}</${Box}>
+      <${CenteredOverlay} width=${cols} height=${rows}>
+        <${Dialog} modal=${modal} />
+      </${CenteredOverlay}>
+    </${Box}>
+  `;
+}
+
+for (const modal of [
+  { type: 'confirm', message: 'Delete "verylongfilename.txt"? This cannot be undone.' },
+  { type: 'input', label: 'Rename "a.txt" to:', value: 'newname.txt' },
+]) {
+  test(`Dialog: panes do not bleed through the ${modal.type} interior`, async () => {
+    const cols = 60;
+    const stdout = new FakeStdout(cols, 12);
+    const { unmount } = render(html`<${DialogScene} cols=${cols} rows=${12} modal=${modal} />`, {
+      stdout,
+      patchConsole: false,
+    });
+    await delay(20);
+    const frame = stripAnsi(stdout.frames[stdout.frames.length - 1]);
+    unmount();
+    assertNoBleed(frame.replace(/\n+$/, '').split('\n'));
+  });
+}
