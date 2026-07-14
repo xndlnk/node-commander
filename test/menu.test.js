@@ -77,6 +77,24 @@ test('loadMenu: invalid entries are filtered out', async () => {
   });
 });
 
+test('loadMenu: direct flag is parsed; non-true direct is dropped', async () => {
+  const cfg = JSON.stringify({
+    items: [
+      { key: 'g', direct: true, label: 'Git status', command: 'git status' },
+      { key: 'l', direct: 'yes', label: 'Bad direct', command: 'echo' },
+      { key: 'b', label: 'No direct', command: 'echo' },
+    ],
+  });
+  await withFile(cfg, (path) => {
+    const res = loadMenu(path);
+    assert.equal(res.items.length, 3);
+    assert.equal(res.items[0].direct, true);
+    assert.equal(res.items[1].direct, undefined); // non-boolean-true dropped
+    assert.equal(res.items[1].label, 'Bad direct'); // entry kept
+    assert.equal(res.items[2].direct, undefined);
+  });
+});
+
 test('loadMenu: valid file with no valid entries → reason set', async () => {
   const cfg = JSON.stringify({ items: [{ label: 'x' }] });
   await withFile(cfg, (path) => {

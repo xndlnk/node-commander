@@ -76,11 +76,12 @@ function parseMenu(raw: string, path: string): MenuResult {
   const items: MenuItem[] = [];
   for (const entry of rawItems) {
     if (!isRecord(entry)) continue;
-    const { label, command, key } = entry;
+    const { label, command, key, direct } = entry;
     if (typeof label !== 'string' || !label) continue;
     if (typeof command !== 'string' || !command) continue;
     const item: MenuItem = { label, command };
     if (typeof key === 'string' && key.length === 1) item.key = key;
+    if (direct === true) item.direct = true;
     items.push(item);
   }
 
@@ -90,4 +91,46 @@ function parseMenu(raw: string, path: string): MenuResult {
 
 function isRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === 'object' && v !== null;
+}
+
+// Single-char nav shortcuts bound in App.useInput; a direct entry whose `key`
+// equals any of these can never fire (built-ins win). Keep in sync with
+// App.useInput.
+export const RESERVED_NAV_KEYS = ['u', 'v', 'e', 'c', 'm', 'n', 'd', 'r', 's', 'q'];
+
+export type DirectKeyAnalysis = {
+  map: Map<string, MenuItem>;
+  warnings: string[];
+};
+
+// Build the key → item dispatch map for entries flagged `direct`, used to run
+// them straight from folder navigation. An entry flagged direct but without a
+// `key` can't be dispatched; a `key` equal to a reserved (built-in) char is
+// skipped (built-ins win); a duplicate `key` keeps the first entry. Each skipped
+// entry is reported in `warnings`.
+export function analyzeDirectKeys(
+  items: MenuItem[],
+  reservedKeys: string[] = RESERVED_NAV_KEYS,
+): DirectKeyAnalysis {
+  const reserved = new Set(reservedKeys);
+  const map = new Map<string, MenuItem>();
+  const warnings: string[] = [];
+  for (const it of items) {
+    if (!it.direct) continue;
+    const dk = it.key;
+    if (!dk) {
+      warnings.push(`direct entry '${it.label}' has no key`);
+      continue;
+    }
+    if (reserved.has(dk)) {
+      warnings.push(`direct key '${dk}' shadowed by built-in`);
+      continue;
+    }
+    if (map.has(dk)) {
+      warnings.push(`direct key '${dk}' duplicated`);
+      continue; // first wins
+    }
+    map.set(dk, it);
+  }
+  return { map, warnings };
 }

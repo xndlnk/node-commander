@@ -195,8 +195,8 @@ wired in Phase 2).
 
 **Tasks**:
 
-- [ ] `src/types.ts`: add `directKey?: string` to `MenuItem`.
-- [ ] `src/core/menu.ts`: in `parseMenu`, validate `directKey` like `key`:
+- [x] `src/types.ts`: add `directKey?: string` to `MenuItem`.
+- [x] `src/core/menu.ts`: in `parseMenu`, validate `directKey` like `key`:
   ```ts
   const { label, command, key, directKey } = entry;
   …
@@ -204,7 +204,7 @@ wired in Phase 2).
   if (typeof directKey === 'string' && directKey.length === 1)
     item.directKey = directKey;
   ```
-- [ ] `src/core/menu.ts`: add the reserved-keys constant and pure analyzer:
+- [x] `src/core/menu.ts`: add the reserved-keys constant and pure analyzer:
   ```ts
   // Single-char nav shortcuts bound in App.useInput; directKeys equal to any of
   // these can never fire (built-ins win). Keep in sync with App.useInput.
@@ -238,15 +238,15 @@ wired in Phase 2).
     return { map, warnings };
   }
   ```
-- [ ] `src/ui/MenuDialog.ts`: change `Props` to receive the loaded menu
+- [x] `src/ui/MenuDialog.ts`: change `Props` to receive the loaded menu
   (`items`, `path`, `reason`) instead of calling `loadMenu`; remove the
   `useMemo(() => loadMenu(), [])`. Render the `directKey` marker on each row,
   e.g. append ` ⟨${it.directKey}⟩` when set (keep the existing `[key]` hotkey
   prefix and dim styling).
-- [ ] `src/ui/App.ts`: add `useMemo` to the React destructure
+- [x] `src/ui/App.ts`: add `useMemo` to the React destructure
   (`const { useState, useEffect, useCallback, useMemo } = React;`) and import
   `loadMenu`, `analyzeDirectKeys`, `RESERVED_NAV_KEYS` from `../core/menu.ts`.
-- [ ] `src/ui/App.ts`: load the menu once and compute the dispatch map:
+- [x] `src/ui/App.ts`: load the menu once and compute the dispatch map:
   ```ts
   const menu = useMemo(() => loadMenu(), []);
   const directKeys = useMemo(
@@ -254,11 +254,11 @@ wired in Phase 2).
     [menu],
   );
   ```
-- [ ] `src/ui/App.ts`: extract `runMenuItem(item: MenuItem)` from `onMenuSelect`
+- [x] `src/ui/App.ts`: extract `runMenuItem(item: MenuItem)` from `onMenuSelect`
   (env build + `runInTerminal({shell:true,cwd,env,pause:true})` + `setStatus` +
   reload with `keepName`/`keepCursor`). Reduce `onMenuSelect` to
   `closeModal(); runMenuItem(item);`.
-- [ ] `src/ui/App.ts`: at the **end** of the normal-navigation block in
+- [x] `src/ui/App.ts`: at the **end** of the normal-navigation block in
   `useInput` (after all built-in `if (input === …)` returns), add:
   ```ts
   if (input) {
@@ -266,22 +266,22 @@ wired in Phase 2).
     if (hit) { runMenuItem(hit); return; }
   }
   ```
-- [ ] `src/ui/App.ts`: pass the loaded menu to `MenuDialog`, e.g.
+- [x] `src/ui/App.ts`: pass the loaded menu to `MenuDialog`, e.g.
   `<${MenuDialog} items=${menu.items} path=${menu.path} reason=${menu.reason} width=… onSelect=… onClose=… />`.
-- [ ] `menu.json`: add a `directKey` to the sample (e.g. Git status →
+- [x] `menu.json`: add a `directKey` to the sample (e.g. Git status →
   `"directKey": "G"`) so the feature is demoable out of the box.
-- [ ] `README.md`: document `directKey` (independent of `key`, single char,
+- [x] `README.md`: document `directKey` (independent of `key`, single char,
   case-sensitive; runs the entry directly from navigation with the same `$NC_*`
   env and pause behavior as the F2 menu) and the built-ins-win collision policy.
 
 **Automated Verification**:
-- [ ] `test/menu.test.js` (extended) passes: a valid `directKey` is parsed onto
+- [x] `test/menu.test.js` (extended) passes: a valid `directKey` is parsed onto
   the item; a multichar `directKey` is dropped while the entry is kept.
-- [ ] `test/directkeys.test.js` (new) passes: `analyzeDirectKeys` maps each valid
+- [x] `test/directkeys.test.js` (new) passes: `analyzeDirectKeys` maps each valid
   `directKey` to its item; a `directKey` in `RESERVED_NAV_KEYS` is excluded from
   the map; a duplicate `directKey` keeps the first item.
-- [ ] `npm test` passes (whole suite).
-- [ ] `npm run typecheck` passes.
+- [x] `npm test` passes (whole suite).
+- [x] `npm run typecheck` passes.
 
 **Manual Verification**:
 - [ ] Run the app; with `menu.json`'s Git-status entry given `directKey "G"`,
@@ -303,7 +303,7 @@ Surface the `warnings` already produced by `analyzeDirectKeys` so a
 misconfigured `directKey` (shadowed by a built-in, or duplicated) is visible.
 
 **Tasks**:
-- [ ] `src/ui/App.ts`: on mount, if `directKeys.warnings` is non-empty, show the
+- [x] `src/ui/App.ts`: on mount, if `directKeys.warnings` is non-empty, show the
   first one via `setStatus`, e.g.
   ```ts
   useEffect(() => {
@@ -314,15 +314,15 @@ misconfigured `directKey` (shadowed by a built-in, or duplicated) is visible.
   ```
   (Transient: the next keypress clears it via the existing status-clear in
   `useInput`.)
-- [ ] `README.md`: note that shadowed/duplicate `directKey`s are ignored and
+- [x] `README.md`: note that shadowed/duplicate `directKey`s are ignored and
   reported with a transient startup status warning.
 
 **Automated Verification**:
-- [ ] `test/directkeys.test.js` (extended) passes: a reserved-shadow `directKey`
+- [x] `test/directkeys.test.js` (extended) passes: a reserved-shadow `directKey`
   yields a `shadowed by built-in` warning; a duplicate yields a `duplicated`
   warning; a clean config yields an empty `warnings` array.
-- [ ] `npm test` passes.
-- [ ] `npm run typecheck` passes.
+- [x] `npm test` passes.
+- [x] `npm run typecheck` passes.
 
 **Manual Verification**:
 - [ ] Set an entry's `directKey` to `d` (or give two entries the same
@@ -332,6 +332,21 @@ misconfigured `directKey` (shadowed by a built-in, or duplicated) is visible.
 ## Implementation Notes
 
 During implementation, document user feedback, problems, and decisions here.
+
+- **Design change (post-plan):** dropped the separate `directKey` field. Each
+  entry now has a single `key` used both in the F2 menu and for direct
+  navigation; a boolean `direct: true` flag opts an entry into direct dispatch.
+  Rationale (user): one key per entry is simpler; whether an entry is
+  direct-accessible is a property of the entry, so flag it in `menu.json`.
+  - `MenuItem`: `directKey?: string` → `direct?: boolean`.
+  - `parseMenu`: parse `direct === true` (anything else dropped, entry kept).
+  - `analyzeDirectKeys`: builds the map from `it.direct` entries keyed by
+    `it.key`; new warning case for a `direct` entry with no `key`
+    (`direct entry '<label>' has no key`). Shadow/duplicate warnings reworded to
+    `direct key '<k>' …`.
+  - `MenuDialog`: marker is now a fixed `⟨direct⟩` (was `⟨<char>⟩`).
+  - `menu.json`: Git status + lazygit flagged `"direct": true`.
+  - Case-sensitivity/built-ins-win/first-wins behavior is unchanged.
 
 ## References
 

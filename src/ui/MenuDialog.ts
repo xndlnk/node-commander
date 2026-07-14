@@ -1,21 +1,24 @@
 import React from 'react';
 import { Box, Text, useInput } from 'ink';
 import type { MenuItem } from '../types.ts';
-import { loadMenu } from '../core/menu.ts';
 import { html } from './html.ts';
 
-const { useState, useMemo } = React;
+const { useState } = React;
 
 type Props = {
   width: number;
+  items: MenuItem[];
+  path: string;
+  reason?: string;
+  warnings?: string[];
   onSelect: (item: MenuItem) => void;
   onClose: () => void;
 };
 
 // F2 user menu: lists configured scripts. Owns its own input (arrows + Enter,
-// per-entry hotkey, Esc to cancel) so App can stay out of the routing.
-export function MenuDialog({ width, onSelect, onClose }: Props) {
-  const { items, path, reason } = useMemo(() => loadMenu(), []);
+// per-entry hotkey, Esc to cancel) so App can stay out of the routing. The menu
+// is loaded once in App and passed in as props.
+export function MenuDialog({ width, items, path, reason, warnings, onSelect, onClose }: Props) {
   const [cursor, setCursor] = useState(0);
 
   useInput((input, key) => {
@@ -46,8 +49,9 @@ export function MenuDialog({ width, onSelect, onClose }: Props) {
       : items.map((it, i) => {
           const selected = i === cursor;
           const hotkey = it.key ? `[${it.key}] ` : '    ';
+          const direct = it.direct ? ' ⟨direct⟩' : '';
           return html`
-            <${Text} key=${i} inverse=${selected}>${hotkey}${it.label}</${Text}>
+            <${Text} key=${i} inverse=${selected}>${hotkey}${it.label}${direct}</${Text}>
           `;
         });
 
@@ -61,6 +65,9 @@ export function MenuDialog({ width, onSelect, onClose }: Props) {
     >
       <${Text} color="magenta" bold>User menu</${Text}>
       ${rows}
+      ${(warnings ?? []).map(
+        (w, i) => html`<${Text} key=${`warn-${i}`} color="yellow">⚠ ${w}</${Text}>`,
+      )}
       <${Text} dimColor>↑↓ + Enter or hotkey • Esc to cancel</${Text}>
     </${Box}>
   `;

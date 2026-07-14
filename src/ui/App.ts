@@ -5,6 +5,7 @@ import { dirname, join } from 'node:path';
 import type { Modal, PaneState, Entry, MenuItem } from '../types.ts';
 import { listDir } from '../core/fs.ts';
 import { copy, move, remove, makeDir, rename, exists } from '../core/ops.ts';
+import { loadMenu, analyzeDirectKeys, RESERVED_NAV_KEYS } from '../core/menu.ts';
 import { dirSize } from '../core/dirSize.ts';
 import { resolveCursor } from '../core/cursor.ts';
 import type { CursorHint } from '../core/cursor.ts';
@@ -19,7 +20,7 @@ import { useShell } from './useShell.ts';
 import { formatSize } from '../util/format.ts';
 import { html } from './html.ts';
 
-const { useState, useEffect, useCallback } = React;
+const { useState, useEffect, useCallback, useMemo } = React;
 
 // Rows consumed by chrome: pane border (2) + header (1) + footer w/ margin (2)
 // + status bar (2). Leaves the rest for the file listing.
@@ -44,6 +45,14 @@ export function App() {
 
   const closeModal = useCallback(() => setModal({ type: 'none' }), []);
   const runInTerminal = useShell();
+
+  // Load the user menu once and derive the directKey dispatch map. Both the F2
+  // menu and direct-key navigation share this single load.
+  const menu = useMemo(() => loadMenu(), []);
+  const directKeys = useMemo(
+    () => analyzeDirectKeys(menu.items, RESERVED_NAV_KEYS),
+    [menu],
+  );
 
   // Quit, first recording the active pane's directory so a shell wrapper can
   // `cd` there. The child can't change the parent shell's cwd itself, so we
@@ -84,6 +93,15 @@ export function App() {
     loadPane(0, initialCwd);
     loadPane(1, initialCwd);
   }, [loadPane, initialCwd]);
+
+  // Surface the first directKey collision (shadowed by a built-in, or a
+  // duplicate) as a transient startup warning. The next keypress clears it via
+  // the status-clear in useInput.
+  useEffect(() => {
+    if (directKeys.warnings.length) {
+      setStatus(`⚠ ${directKeys.warnings[0]}`);
+    }
+  }, [directKeys]);
 
   const viewHeight = Math.max(3, (process.stdout.rows || 24) - CHROME_ROWS);
   const totalWidth = process.stdout.columns || 80;
@@ -305,9 +323,11 @@ export function App() {
   // ── User menu (F2) ──────────────────────────────────────────────────────
   const openMenu = useCallback(() => setModal({ type: 'menu' }), []);
 
-  const onMenuSelect = useCallback(
+  // Run a menu item's command through the terminal hand-off. Shared by the F2
+  // menu (onMenuSelect) and the direct-key navigation path so both behave
+  // identically (env, pause, status, reload).
+  const runMenuItem = useCallback(
     (item: MenuItem) => {
-      closeModal();
       const sel = current;
       const selected = sel && sel.name !== '..' ? sel.name : '';
       const env: NodeJS.ProcessEnv = {
@@ -333,7 +353,15 @@ export function App() {
         selected ? { keepName: selected } : { keepCursor: activePane.cursor },
       );
     },
-    [current, activePane, active, runInTerminal, loadPane, closeModal],
+    [current, activePane, active, runInTerminal, loadPane],
+  );
+
+  const onMenuSelect = useCallback(
+    (item: MenuItem) => {
+      closeModal();
+      runMenuItem(item);
+    },
+    [closeModal, runMenuItem],
   );
 
   useInput((input, key) => {
@@ -397,6 +425,17 @@ export function App() {
       quit();
       return;
     }
+
+    // Direct-key fallthrough: any char matching a `direct` menu entry's key runs
+    // it directly. Reserved nav chars never reach here — their built-in returned
+    // above — so built-ins always win.
+    if (input) {
+      const hit = directKeys.map.get(input);
+      if (hit) {
+        runMenuItem(hit);
+        return;
+      }
+    }
   });
 
   // F-keys: decoded from raw stdin chunks. Inert while a dialog is open.
@@ -457,7 +496,7 @@ export function App() {
         ? html`
             <${CenteredOverlay} width=${totalWidth} height=${totalRows}>
               ${modal.type === 'menu'
-                ? html`<${MenuDialog} width=${totalWidth} onSelect=${onMenuSelect} onClose=${closeModal} />`
+                ? html`<${MenuDialog} width=${totalWidth} items=${menu.items} path=${menu.path} reason=${menu.reason} warnings=${directKeys.warnings} onSelect=${onMenuSelect} onClose=${closeModal} />`
                 : html`<${Dialog} modal=${modal} />`}
             </${CenteredOverlay}>`
         : null}

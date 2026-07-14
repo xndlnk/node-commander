@@ -18,6 +18,9 @@ export type PaneState = {
 
 export type MenuItem = {
   key?: string;
+  // When true, `key` also runs this entry directly from folder navigation
+  // (not just inside the F2 menu).
+  direct?: boolean;
   label: string;
   command: string;
 };

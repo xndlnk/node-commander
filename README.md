@@ -113,17 +113,37 @@ Resolved in order (first existing file wins):
 A missing or malformed file is handled gracefully — the menu opens empty with a
 hint rather than crashing. The file is JSON, either `{ "items": [...] }` or a bare
 array. Each entry needs a `label` and a `command`; `key` (a single-character
-hotkey) is optional. Invalid entries are dropped.
+hotkey) and `direct` (see below) are optional. Invalid entries are dropped.
 
 ```json
 {
   "items": [
-    { "key": "g", "label": "Git status", "command": "git status" },
+    { "key": "g", "direct": true, "label": "Git status", "command": "git status" },
     { "key": "b", "label": "Build", "command": "npm run build" },
     { "label": "Disk usage here", "command": "du -sh *" }
   ]
 }
 ```
+
+### Direct entries — run without opening the menu
+
+Add `"direct": true` to an entry to make its `key` run the command **directly
+from folder navigation**, without opening the F2 menu first. There is just one
+`key` per entry: it selects the entry inside the F2 menu and — when `direct` is
+set — also triggers it from navigation. It runs through the exact same path as
+selecting it in the menu — same `$NC_*` env, working directory, `Press any key to
+continue…` pause, and pane refresh.
+
+Key matching is **case-sensitive**, so if a lowercase key would collide you can
+use an uppercase one (e.g. `G` = Shift-g). Built-in navigation shortcuts always
+win: a direct entry whose `key` is a reserved char (`u v e c m n d r s q`) never
+fires from navigation (it still works inside the menu). If two direct entries
+share a `key`, the first one wins. The F2 menu shows a `⟨direct⟩` marker next to
+direct entries.
+
+A direct entry that is shadowed by a built-in, duplicated, or missing a `key` is
+ignored for direct dispatch and reported with a transient warning on the status
+line at startup (cleared on the next keypress).
 
 ### Environment exposed to scripts
 

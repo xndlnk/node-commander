@@ -1,9 +1,9 @@
 {
   "items": [
-    { "key": "g", "label": "Git status", "command": "git status" },
-    { "key": "l", "label": "lazygit", "command": "lazygit" },
+    { "key": "g", "direct": true, "label": "Git status", "command": "git status" },
+    { "key": "l", "direct": true, "label": "LazyGit", "command": "lazygit" },
     { "key": "d", "label": "Disk usage of entries", "command": "du -sh * 2>/dev/null | sort -h" },
-    { "key": "s", "label": "Show selected entry", "command": "echo \"Selected: $NC_SELECTED\"; echo \"Path: $NC_SELECTED_PATH\"; echo \"Dir: $NC_CWD\"" },
+    { "key": "e", "direct": true, "label": "Show selected entry", "command": "echo \"Selected: $NC_SELECTED\"; echo \"Path: $NC_SELECTED_PATH\"; echo \"Dir: $NC_CWD\"" },
     { "key": "f", "label": "Find TODOs here", "command": "grep -rn TODO . 2>/dev/null | head -30" }
   ]
 }
