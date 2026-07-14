@@ -6,6 +6,8 @@ import type { Modal, PaneState, Entry, MenuItem } from '../types.ts';
 import { listDir } from '../core/fs.ts';
 import { copy, move, remove, makeDir, rename, exists } from '../core/ops.ts';
 import { dirSize } from '../core/dirSize.ts';
+import { resolveCursor } from '../core/cursor.ts';
+import type { CursorHint } from '../core/cursor.ts';
 import { Pane } from './Pane.ts';
 import { StatusBar } from './StatusBar.ts';
 import { Dialog } from './Dialog.ts';
@@ -27,7 +29,7 @@ function emptyPane(cwd: string): PaneState {
   return { cwd, entries: [], cursor: 0, scrollOffset: 0 };
 }
 
-type LoadOpts = { keepName?: string; keepCursor?: number };
+type LoadOpts = CursorHint;
 
 export function App() {
   const { exit } = useApp();
@@ -66,13 +68,7 @@ export function App() {
         const entries = await listDir(cwd);
         setPanes((prev) => {
           const next: [PaneState, PaneState] = [prev[0], prev[1]];
-          let cursor = 0;
-          if (opts.keepName) {
-            const i = entries.findIndex((e) => e.name === opts.keepName);
-            if (i >= 0) cursor = i;
-          } else if (opts.keepCursor !== undefined) {
-            cursor = Math.max(0, Math.min(opts.keepCursor, entries.length - 1));
-          }
+          const cursor = resolveCursor(entries, opts);
           next[which] = { cwd, entries, cursor, scrollOffset: 0 };
           return next;
         });
@@ -328,8 +324,14 @@ export function App() {
         pause: true,
       });
       setStatus(`✓ Ran ${item.label}`);
-      // The script may have changed the directory contents.
-      loadPane(active, activePane.cwd);
+      // The script may have changed the directory contents. Reload, but keep the
+      // cursor where it was — on the selected entry if there is one, otherwise at
+      // the same position.
+      loadPane(
+        active,
+        activePane.cwd,
+        selected ? { keepName: selected } : { keepCursor: activePane.cursor },
+      );
     },
     [current, activePane, active, runInTerminal, loadPane, closeModal],
   );
