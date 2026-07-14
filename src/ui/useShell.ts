@@ -66,12 +66,6 @@ export function useShell() {
     // Disable bracketed paste so pasted input inside vim/scripts doesn't leak
     // \x1b[200~ / \x1b[201~ artifacts back into our UI.
     process.stdout.write('\x1b[?2004l');
-    // Clear the screen and home the cursor before handing off. This gives the
-    // child a clean slate (like mc/ranger) and, crucially, means output always
-    // starts at the top — so afterwards we can tell "printed something" (cursor
-    // moved off home) from "full-screen app that restored the screen" (cursor
-    // back at home) even when the child scrolled.
-    process.stdout.write('\x1b[2J\x1b[H');
 
     // Snapshot the cursor before handing off, so afterwards we can tell whether
     // the child actually left any visible output behind. Declared out here so
@@ -79,7 +73,20 @@ export function useShell() {
     let before: { row: number; col: number } | null = null;
 
     try {
-      if (opts.pause) before = readCursorPosition(setRawMode);
+      if (opts.pause) {
+        // Clear the screen and home the cursor before handing off. This gives the
+        // child a clean slate (like mc/ranger) and, crucially, means output
+        // always starts at the top — so afterwards we can tell "printed
+        // something" (cursor moved off home) from "full-screen app that restored
+        // the screen" (cursor back at home) even when the child scrolled.
+        //
+        // Only do this on the pause path (menu scripts). For a plain hand-off
+        // like F4/vim we must NOT clear: vim restores its own screen on exit, so
+        // clearing here would leave a blank screen until Ink repaints on the next
+        // keypress.
+        process.stdout.write('\x1b[2J\x1b[H');
+        before = readCursorPosition(setRawMode);
+      }
 
       if (opts.shell) {
         spawnSync(command, {
