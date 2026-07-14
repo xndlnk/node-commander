@@ -56,8 +56,9 @@ Notes:
 
 ## Custom-script user menu (F2)
 
-Press `F2` (or `u`) to open a menu of your own scripts. Choose with `↑/↓` +
-`Enter`, or press an entry's single-key hotkey; `Esc` cancels.
+Press `F2` (or `u`) to open a menu of your own scripts. The menu appears centered
+over the panes (which stay visible around it). Choose with `↑/↓` + `Enter`, or
+press an entry's single-key hotkey; `Esc` cancels.
 
 The selected script runs in the terminal with the **active pane** as its working
 directory, followed by a _Press any key to continue…_ pause, then control returns
