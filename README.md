@@ -65,6 +65,7 @@ Every action has both a Norton-Commander F-key and a letter shortcut.
 | `↑` `↓`     |        | Move the cursor                                   |
 | `PgUp/PgDn` |        | Page the cursor                                   |
 | `Enter`     |        | Descend into a directory / `..` to go up          |
+| `F1`        |        | Show this keybindings help overlay                |
 | `F2`        | `u`    | Custom-script user menu                           |
 | `F3`        | `v`    | View file (in-app, syntax-highlighted, read-only) |
 | `F4`        | `e`    | Edit file in `$EDITOR` (else `vim`)               |

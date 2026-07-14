@@ -3,6 +3,7 @@ import { html } from './html.ts';
 
 // Norton-Commander-style function-key hints.
 const HINTS: [string, string][] = [
+  ['1', 'Help'],
   ['2', 'Menu'],
   ['3', 'View'],
   ['4', 'Edit'],

@@ -31,7 +31,8 @@ export type Modal =
   | { type: 'confirm'; kind: ConfirmKind; message: string; onConfirm: () => void }
   | { type: 'input'; kind: InputKind; label: string; value: string; onSubmit: (value: string) => void }
   | { type: 'viewer'; path: string; name: string }
-  | { type: 'menu' };
+  | { type: 'menu' }
+  | { type: 'help' };
 
 export type ConfirmKind = 'delete' | 'copy' | 'move' | 'overwrite';
 export type InputKind = 'mkdir' | 'rename';

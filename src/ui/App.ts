@@ -14,6 +14,7 @@ import { StatusBar } from './StatusBar.ts';
 import { Dialog } from './Dialog.ts';
 import { Viewer } from './Viewer.ts';
 import { MenuDialog } from './MenuDialog.ts';
+import { HelpDialog } from './HelpDialog.ts';
 import { CenteredOverlay } from './CenteredOverlay.ts';
 import { useFKeys } from './useFKeys.ts';
 import { useShell } from './useShell.ts';
@@ -323,6 +324,9 @@ export function App() {
   // ── User menu (F2) ──────────────────────────────────────────────────────
   const openMenu = useCallback(() => setModal({ type: 'menu' }), []);
 
+  // ── Keybindings help (F1) ───────────────────────────────────────────────
+  const openHelp = useCallback(() => setModal({ type: 'help' }), []);
+
   // Run a menu item's command through the terminal hand-off. Shared by the F2
   // menu (onMenuSelect) and the direct-key navigation path so both behave
   // identically (env, pause, status, reload).
@@ -381,8 +385,9 @@ export function App() {
       }
       return;
     }
-    // The Viewer and MenuDialog own their own input; don't double-handle here.
-    if (modal.type === 'viewer' || modal.type === 'menu') return;
+    // The Viewer, MenuDialog and HelpDialog own their own input; don't
+    // double-handle here.
+    if (modal.type === 'viewer' || modal.type === 'menu' || modal.type === 'help') return;
     if (modal.type === 'confirm') {
       if (key.return || input === 'y') {
         const confirm = modal.onConfirm;
@@ -440,6 +445,14 @@ export function App() {
 
   // F-keys: decoded from raw stdin chunks. Inert while a dialog is open.
   useFKeys((id) => {
+    // F1 toggles the help overlay: opens from normal navigation, closes the
+    // help overlay, and is inert over any other modal. Handled before the guard
+    // below so it never falls through to the F2..F10 switch.
+    if (id === 'F1') {
+      if (modal.type === 'none') openHelp();
+      else if (modal.type === 'help') closeModal();
+      return;
+    }
     if (modal.type !== 'none') return;
     if (status) setStatus('');
     switch (id) {
@@ -492,12 +505,14 @@ export function App() {
         <${Pane} pane=${panes[0]} active=${active === 0} height=${viewHeight} width=${paneWidth} />
         <${Pane} pane=${panes[1]} active=${active === 1} height=${viewHeight} width=${paneWidth} />
       </${Box}>
-      ${modal.type === 'menu' || modal.type === 'confirm' || modal.type === 'input'
+      ${modal.type === 'menu' || modal.type === 'confirm' || modal.type === 'input' || modal.type === 'help'
         ? html`
             <${CenteredOverlay} width=${totalWidth} height=${totalRows}>
               ${modal.type === 'menu'
                 ? html`<${MenuDialog} width=${totalWidth} items=${menu.items} path=${menu.path} reason=${menu.reason} warnings=${directKeys.warnings} onSelect=${onMenuSelect} onClose=${closeModal} />`
-                : html`<${Dialog} modal=${modal} />`}
+                : modal.type === 'help'
+                  ? html`<${HelpDialog} width=${totalWidth} items=${menu.items} onClose=${closeModal} />`
+                  : html`<${Dialog} modal=${modal} />`}
             </${CenteredOverlay}>`
         : null}
       <${StatusBar} status=${status} />

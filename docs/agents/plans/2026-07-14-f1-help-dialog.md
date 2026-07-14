@@ -191,10 +191,10 @@ wiring, the status-bar hint, and docs — one vertical slice.
 
 **Tasks**:
 
-- [ ] `src/types.ts`: add `| { type: 'help' }` to the `Modal` union
+- [x] `src/types.ts`: add `| { type: 'help' }` to the `Modal` union
   (after the `menu` variant).
 
-- [ ] `src/ui/HelpDialog.ts`: new presentational component modeled on
+- [x] `src/ui/HelpDialog.ts`: new presentational component modeled on
   `MenuDialog.ts`. Props: `{ width: number; items: MenuItem[]; onClose: () => void }`.
   - Static built-in rows, each a `[fkey, letter, action]` triple; render as
     aligned columns via the `line()` clamp. Include groups "Navigation" and
@@ -224,10 +224,10 @@ wiring, the status-bar hint, and docs — one vertical slice.
   ];
   ```
 
-- [ ] `src/ui/App.ts`: add `const openHelp = useCallback(() => setModal({ type: 'help' }), []);`
+- [x] `src/ui/App.ts`: add `const openHelp = useCallback(() => setModal({ type: 'help' }), []);`
   near `openMenu` (App.ts:324).
 
-- [ ] `src/ui/App.ts`: in `useFKeys` (App.ts:442), handle F1 before the modal guard:
+- [x] `src/ui/App.ts`: in `useFKeys` (App.ts:442), handle F1 before the modal guard:
   ```ts
   useFKeys((id) => {
     if (id === 'F1') {
@@ -241,11 +241,11 @@ wiring, the status-bar hint, and docs — one vertical slice.
   });
   ```
 
-- [ ] `src/ui/App.ts`: in `useInput` (App.ts:385), extend the owns-its-own-input
+- [x] `src/ui/App.ts`: in `useInput` (App.ts:385), extend the owns-its-own-input
   early return to include help:
   `if (modal.type === 'viewer' || modal.type === 'menu' || modal.type === 'help') return;`
 
-- [ ] `src/ui/App.ts`: in the render (App.ts:495-502), add `help` to the overlay
+- [x] `src/ui/App.ts`: in the render (App.ts:495-502), add `help` to the overlay
   condition and render the component:
   ```ts
   ${modal.type === 'menu' || modal.type === 'confirm' || modal.type === 'input' || modal.type === 'help'
@@ -257,12 +257,12 @@ wiring, the status-bar hint, and docs — one vertical slice.
   ```
   Add the `import { HelpDialog } from './HelpDialog.ts';`.
 
-- [ ] `src/ui/StatusBar.ts`: prepend `['1', 'Help']` to `HINTS` (StatusBar.ts:5).
+- [x] `src/ui/StatusBar.ts`: prepend `['1', 'Help']` to `HINTS` (StatusBar.ts:5).
 
-- [ ] `README.md`: add an `F1 | | Show this keybindings help` row to the table
+- [x] `README.md`: add an `F1 | | Show this keybindings help` row to the table
   (README.md:62-77) and mention F1 in the "Keybindings" intro if appropriate.
 
-- [ ] `test/help.test.js`: new test file mirroring `overlay.test.js`.
+- [x] `test/help.test.js`: new test file mirroring `overlay.test.js`.
   - Render `HelpDialog` (with `FakeStdin`) inside a `#`-packed backdrop scene and
     assert `assertNoBleed(lines)` — no panes bleed through the interior.
   - Assert built-in content present (e.g. frame includes `Copy`, `Rename`, `Help`).
@@ -272,10 +272,10 @@ wiring, the status-bar hint, and docs — one vertical slice.
     `Custom (menu.json)`.
 
 **Automated Verification**:
-- [ ] `npm test` passes (includes the new `test/help.test.js`).
-- [ ] `npm run typecheck` passes (new `help` variant handled everywhere the
+- [x] `npm test` passes (includes the new `test/help.test.js`).
+- [x] `npm run typecheck` passes (new `help` variant handled everywhere the
   `Modal` union is matched).
-- [ ] `test/help.test.js` no-bleed assertion passes.
+- [x] `test/help.test.js` no-bleed assertion passes.
 
 **Manual Verification**:
 - [ ] Run `npm start`; press **F1** — the "Keybindings" overlay appears centered
