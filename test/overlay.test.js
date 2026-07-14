@@ -4,6 +4,7 @@ import { EventEmitter } from 'node:events';
 import { setTimeout as delay } from 'node:timers/promises';
 import { render, Box, Text } from 'ink';
 import { CenteredOverlay } from '../src/ui/CenteredOverlay.ts';
+import { MenuDialog } from '../src/ui/MenuDialog.ts';
 import { html } from '../src/ui/html.ts';
 
 // Minimal stdout stand-in that captures every frame Ink writes.
@@ -17,6 +18,18 @@ class FakeStdout extends EventEmitter {
   write(d) {
     this.frames.push(d);
   }
+}
+
+// Minimal stdin stand-in so components using Ink's useInput can mount.
+class FakeStdin extends EventEmitter {
+  isTTY = true;
+  setRawMode() {}
+  ref() {}
+  unref() {}
+  read() {}
+  setEncoding() {}
+  resume() {}
+  pause() {}
 }
 
 const stripAnsi = (s) => s.replace(/\x1B\[[0-9;]*[A-Za-z]/g, '');
@@ -78,4 +91,64 @@ test('CenteredOverlay: floats a centered box over still-visible panes', async ()
   const boxRow = lines.findIndex((l) => l.includes('User menu'));
   assert.ok(boxRow > 0, 'overlay is offset from the top edge');
   assert.ok(boxRow < lines.length - 1, 'overlay is offset from the bottom edge');
+});
+
+// Backdrop packed with a sentinel char behind a full-width menu; if the menu
+// box left any interior cell unpainted, the sentinel would bleed through.
+function MenuScene({ cols, rows }) {
+  const backdrop = Array.from(
+    { length: rows },
+    (_, i) => html`<${Text} key=${i}>${'#'.repeat(cols)}</${Text}>`,
+  );
+  return html`
+    <${Box} flexDirection="column">
+      <${Box} flexDirection="column">${backdrop}</${Box}>
+      <${CenteredOverlay} width=${cols} height=${rows}>
+        <${MenuDialog}
+          width=${cols}
+          items=${[
+            { key: 'a', label: 'Alpha' },
+            { key: 'b', label: 'Beta' },
+          ]}
+          path="/tmp/menu.json"
+          warnings=${["direct key 'a' shadowed by built-in"]}
+          onSelect=${() => {}}
+          onClose=${() => {}}
+        />
+      </${CenteredOverlay}>
+    </${Box}>
+  `;
+}
+
+test('MenuDialog: panes do not bleed through the menu interior', async () => {
+  const cols = 40;
+  const stdout = new FakeStdout(cols, 14);
+  const stdin = new FakeStdin();
+  const { unmount } = render(html`<${MenuScene} cols=${cols} rows=${14} />`, {
+    stdout,
+    stdin,
+    patchConsole: false,
+  });
+  await delay(20);
+  const frame = stripAnsi(stdout.frames[stdout.frames.length - 1]);
+  unmount();
+
+  const lines = frame.replace(/\n+$/, '').split('\n');
+
+  // Sanity: the menu actually rendered over the backdrop.
+  assert.ok(frame.includes('Alpha'), 'menu entry rendered');
+
+  // On every row the menu border spans (between its two vertical borders), no
+  // backdrop sentinel may show — the interior must be fully painted.
+  const menuRows = lines.filter((l) => (l.match(/│/g) ?? []).length >= 2);
+  assert.ok(menuRows.length >= 2, 'menu interior rows found');
+  for (const row of menuRows) {
+    const left = row.indexOf('│');
+    const right = row.lastIndexOf('│');
+    const interior = row.slice(left + 1, right);
+    assert.ok(
+      !interior.includes('#'),
+      `backdrop bled into menu interior: ${JSON.stringify(row)}`,
+    );
+  }
 });
