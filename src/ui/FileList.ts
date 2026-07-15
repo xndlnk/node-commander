@@ -43,7 +43,8 @@ export function FileList({ entries, cursor, height, width, active }: Props) {
       <${Text}
         key=${index}
         inverse=${isCursor && active}
-        dimColor=${(isCursor && !active) || (!isCursor && entry.isDir)}
+        color=${entry.isDir ? 'cyan' : undefined}
+        dimColor=${isCursor && !active}
         bold=${entry.isDir}
       >${line}</${Text}>
     `;
