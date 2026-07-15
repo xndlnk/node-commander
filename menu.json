@@ -1,4 +1,5 @@
 {
+  "openCommand": "open $NC_SELECTED_PATH",
   "items": [
     { "key": "g", "direct": true, "label": "Git status", "command": "git status" },
     { "key": "l", "direct": true, "label": "LazyGit", "command": "lazygit" },

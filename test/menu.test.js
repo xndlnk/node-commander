@@ -95,6 +95,51 @@ test('loadMenu: direct flag is parsed; non-true direct is dropped', async () => 
   });
 });
 
+test('loadMenu: valid openCommand parses onto res.openCommand', async () => {
+  const cfg = JSON.stringify({
+    openCommand: 'open $NC_SELECTED_PATH',
+    items: [{ label: 'Ls', command: 'ls' }],
+  });
+  await withFile(cfg, (path) => {
+    const res = loadMenu(path);
+    assert.equal(res.openCommand, 'open $NC_SELECTED_PATH');
+    assert.equal(res.items.length, 1);
+  });
+});
+
+test('loadMenu: empty-string openCommand → undefined', async () => {
+  const cfg = JSON.stringify({ openCommand: '   ', items: [{ label: 'Ls', command: 'ls' }] });
+  await withFile(cfg, (path) => {
+    const res = loadMenu(path);
+    assert.equal(res.openCommand, undefined);
+  });
+});
+
+test('loadMenu: non-string openCommand → undefined', async () => {
+  const cfg = JSON.stringify({ openCommand: 42, items: [{ label: 'Ls', command: 'ls' }] });
+  await withFile(cfg, (path) => {
+    const res = loadMenu(path);
+    assert.equal(res.openCommand, undefined);
+  });
+});
+
+test('loadMenu: absent openCommand → undefined', async () => {
+  const cfg = JSON.stringify({ items: [{ label: 'Ls', command: 'ls' }] });
+  await withFile(cfg, (path) => {
+    const res = loadMenu(path);
+    assert.equal(res.openCommand, undefined);
+  });
+});
+
+test('loadMenu: bare-array config → openCommand undefined, items still parse', async () => {
+  const cfg = JSON.stringify([{ label: 'Ls', command: 'ls -la' }]);
+  await withFile(cfg, (path) => {
+    const res = loadMenu(path);
+    assert.equal(res.openCommand, undefined);
+    assert.equal(res.items.length, 1);
+  });
+});
+
 test('loadMenu: valid file with no valid entries → reason set', async () => {
   const cfg = JSON.stringify({ items: [{ label: 'x' }] });
   await withFile(cfg, (path) => {

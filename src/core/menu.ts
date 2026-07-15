@@ -7,6 +7,7 @@ export type MenuResult = {
   items: MenuItem[];
   path: string;
   reason?: string; // set when items is empty and we want to explain why
+  openCommand?: string; // top-level command run on Enter over a file
 };
 
 // Config resolution order (first existing file wins):
@@ -85,8 +86,15 @@ function parseMenu(raw: string, path: string): MenuResult {
     items.push(item);
   }
 
+  // Object form only; a bare array has no place for a top-level field. A
+  // non-string or empty/whitespace value is omitted (treated as unset).
+  let openCommand: string | undefined;
+  if (isRecord(data) && typeof data['openCommand'] === 'string' && data['openCommand'].trim()) {
+    openCommand = data['openCommand'];
+  }
+
   const reason = items.length === 0 ? 'No valid entries in config' : undefined;
-  return { items, path, reason };
+  return { items, path, reason, openCommand };
 }
 
 function isRecord(v: unknown): v is Record<string, unknown> {

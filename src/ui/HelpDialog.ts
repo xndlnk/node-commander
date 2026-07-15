@@ -19,7 +19,7 @@ const BINDINGS: { group: string; rows: [string, string, string][] }[] = [
       ['Tab', '', 'Switch pane'],
       ['↑ ↓', '', 'Move cursor'],
       ['PgUp/PgDn', '', 'Page cursor'],
-      ['Enter', '', 'Open dir / .. up'],
+      ['Enter', '', 'Open dir / .. up / file'],
     ],
   },
   {

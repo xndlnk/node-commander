@@ -64,7 +64,7 @@ Every action has both a Norton-Commander F-key and a letter shortcut.
 | `Tab`       |        | Switch the active pane                            |
 | `↑` `↓`     |        | Move the cursor                                   |
 | `PgUp/PgDn` |        | Page the cursor                                   |
-| `Enter`     |        | Descend into a directory / `..` to go up          |
+| `Enter`     |        | Descend into a dir / `..` up / open a file (`openCommand`) |
 | `F1`        |        | Show this keybindings help overlay                |
 | `F2`        | `u`    | Custom-script user menu                           |
 | `F3`        | `v`    | View file (in-app, syntax-highlighted, read-only) |
@@ -114,10 +114,12 @@ Resolved in order (first existing file wins):
 A missing or malformed file is handled gracefully — the menu opens empty with a
 hint rather than crashing. The file is JSON, either `{ "items": [...] }` or a bare
 array. Each entry needs a `label` and a `command`; `key` (a single-character
-hotkey) and `direct` (see below) are optional. Invalid entries are dropped.
+hotkey) and `direct` (see below) are optional. Invalid entries are dropped. The
+object form may also carry a top-level `openCommand` (see below).
 
 ```json
 {
+  "openCommand": "open $NC_SELECTED_PATH",
   "items": [
     { "key": "g", "direct": true, "label": "Git status", "command": "git status" },
     { "key": "b", "label": "Build", "command": "npm run build" },
@@ -125,6 +127,20 @@ hotkey) and `direct` (see below) are optional. Invalid entries are dropped.
   ]
 }
 ```
+
+### Open a file on `Enter` (`openCommand`)
+
+Pressing `Enter` on a directory descends into it and on `..` goes up. On a
+**file**, Node Commander runs the top-level `openCommand` from `menu.json`
+through the same terminal hand-off as the F2 menu — same `$NC_*` environment
+(so `$NC_SELECTED_PATH` expands to the file), the **active pane** as working
+directory, the smart _Press any key to continue…_ pause, and a pane refresh.
+
+On macOS, `"openCommand": "open $NC_SELECTED_PATH"` opens the file in its default
+app. `openCommand` is only read from the object form (`{ "openCommand": "...",
+"items": [...] }`); a bare-array config cannot set it. When `openCommand` is
+missing, empty, or not a string, `Enter` on a file shows a transient hint telling
+you to add `openCommand` to `menu.json`, and nothing else happens.
 
 ### Direct entries — run without opening the menu
 

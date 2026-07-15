@@ -132,6 +132,40 @@ export function App() {
     [active],
   );
 
+  // Run a menu item's command through the terminal hand-off. Shared by the F2
+  // menu (onMenuSelect), the direct-key navigation path, and Enter-on-a-file
+  // (via a synthetic Open item) so they all behave identically (env, pause,
+  // status, reload). Declared before enter() so enter() can depend on it.
+  const runMenuItem = useCallback(
+    (item: MenuItem) => {
+      const sel = current;
+      const selected = sel && sel.name !== '..' ? sel.name : '';
+      const env: NodeJS.ProcessEnv = {
+        ...process.env,
+        NC_CWD: activePane.cwd,
+        NC_SELECTED: selected,
+        NC_SELECTED_PATH: selected ? join(activePane.cwd, selected) : '',
+      };
+      // shell + pause: run the script, then "Press any key to continue…".
+      runInTerminal(item.command, {
+        shell: true,
+        cwd: activePane.cwd,
+        env,
+        pause: true,
+      });
+      setStatus(`✓ Ran ${item.label}`);
+      // The script may have changed the directory contents. Reload, but keep the
+      // cursor where it was — on the selected entry if there is one, otherwise at
+      // the same position.
+      loadPane(
+        active,
+        activePane.cwd,
+        selected ? { keepName: selected } : { keepCursor: activePane.cursor },
+      );
+    },
+    [current, activePane, active, runInTerminal, loadPane],
+  );
+
   const enter = useCallback(() => {
     const entry = activePane.entries[activePane.cursor];
     if (!entry) return;
@@ -139,9 +173,15 @@ export function App() {
       loadPane(active, dirname(activePane.cwd), { keepName: baseName(activePane.cwd) });
     } else if (entry.isDir) {
       loadPane(active, join(activePane.cwd, entry.name));
+    } else {
+      // File: run the user-defined open command, if configured.
+      if (menu.openCommand) {
+        runMenuItem({ label: 'Open', command: menu.openCommand });
+      } else {
+        setStatus('No open command set — add "openCommand" to menu.json');
+      }
     }
-    // File: no-op stub until Phase 3 (F3 view / F4 edit).
-  }, [activePane, active, loadPane]);
+  }, [activePane, active, loadPane, menu.openCommand, runMenuItem]);
 
   // True when there is a real (non-`..`) selection to operate on.
   const hasSelection = (): boolean => !!current && current.name !== '..';
@@ -326,39 +366,6 @@ export function App() {
 
   // ── Keybindings help (F1) ───────────────────────────────────────────────
   const openHelp = useCallback(() => setModal({ type: 'help' }), []);
-
-  // Run a menu item's command through the terminal hand-off. Shared by the F2
-  // menu (onMenuSelect) and the direct-key navigation path so both behave
-  // identically (env, pause, status, reload).
-  const runMenuItem = useCallback(
-    (item: MenuItem) => {
-      const sel = current;
-      const selected = sel && sel.name !== '..' ? sel.name : '';
-      const env: NodeJS.ProcessEnv = {
-        ...process.env,
-        NC_CWD: activePane.cwd,
-        NC_SELECTED: selected,
-        NC_SELECTED_PATH: selected ? join(activePane.cwd, selected) : '',
-      };
-      // shell + pause: run the script, then "Press any key to continue…".
-      runInTerminal(item.command, {
-        shell: true,
-        cwd: activePane.cwd,
-        env,
-        pause: true,
-      });
-      setStatus(`✓ Ran ${item.label}`);
-      // The script may have changed the directory contents. Reload, but keep the
-      // cursor where it was — on the selected entry if there is one, otherwise at
-      // the same position.
-      loadPane(
-        active,
-        activePane.cwd,
-        selected ? { keepName: selected } : { keepCursor: activePane.cursor },
-      );
-    },
-    [current, activePane, active, runInTerminal, loadPane],
-  );
 
   const onMenuSelect = useCallback(
     (item: MenuItem) => {

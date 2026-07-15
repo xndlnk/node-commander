@@ -163,9 +163,9 @@ the existing menu-item path (or show a hint), and document the behavior.
 
 **Tasks**:
 
-- [ ] `src/core/menu.ts`: add `openCommand?: string` to the `MenuResult` type.
+- [x] `src/core/menu.ts`: add `openCommand?: string` to the `MenuResult` type.
 
-- [ ] `src/core/menu.ts`: in `parseMenu`, after building `items`, read the
+- [x] `src/core/menu.ts`: in `parseMenu`, after building `items`, read the
       top-level `openCommand` from the object form and validate it:
   ```ts
   // Object form only; a bare array has no place for a top-level field.
@@ -178,14 +178,14 @@ the existing menu-item path (or show a hint), and document the behavior.
   (Return `openCommand` alongside the existing fields; leave the malformed-JSON
   and no-items early returns as-is — they omit `openCommand`, i.e. `undefined`.)
 
-- [ ] `src/ui/App.ts`: relocate the `runMenuItem` `useCallback` (App.ts:333-361)
+- [x] `src/ui/App.ts`: relocate the `runMenuItem` `useCallback` (App.ts:333-361)
       to above the `enter()` `useCallback` (App.ts:135) so `enter()` can depend on
       it without a const TDZ. Keep `onMenuSelect` where it works (it already sits
       after `runMenuItem`). Verify no other reordering is needed (`runMenuItem`
       depends only on `current`, `activePane`, `active`, `runInTerminal`,
       `loadPane`, all declared earlier).
 
-- [ ] `src/ui/App.ts`: extend `enter()`'s file branch. Replace the
+- [x] `src/ui/App.ts`: extend `enter()`'s file branch. Replace the
       `// File: no-op stub…` comment with:
   ```ts
   } else {
@@ -200,22 +200,22 @@ the existing menu-item path (or show a hint), and document the behavior.
   Update `enter()`'s dependency array to include `menu.openCommand` (or `menu`)
   and `runMenuItem`.
 
-- [ ] `src/ui/HelpDialog.ts`: update the Navigation `Enter` row action text from
+- [x] `src/ui/HelpDialog.ts`: update the Navigation `Enter` row action text from
       `'Open dir / .. up'` to something like `'Open dir / .. up / open file'`
       (keep within the column width).
 
-- [ ] `menu.json` (repo sample): add a top-level `openCommand` example so `npm
+- [x] `menu.json` (repo sample): add a top-level `openCommand` example so `npm
       start` in-repo demonstrates the feature, e.g.
       `"openCommand": "echo Open $NC_SELECTED_PATH"` (portable; avoids assuming
       macOS `open`). Keep the existing `items`.
 
-- [ ] `README.md`: update the Keybindings table `Enter` row to note it opens a
+- [x] `README.md`: update the Keybindings table `Enter` row to note it opens a
       file via `openCommand`; add an `openCommand` subsection under the config
       docs (object-form only, `$NC_*` expansion, macOS `open $NC_SELECTED_PATH`
       example, and the "hint when unset" behavior); mention `openCommand` in the
       Config-file paragraph that currently lists only `items`.
 
-- [ ] `test/menu.test.js`: add cases —
+- [x] `test/menu.test.js`: add cases —
   - valid `openCommand` string parses onto `res.openCommand`;
   - empty-string `openCommand` → `res.openCommand === undefined`;
   - non-string `openCommand` (e.g. number) → `undefined`;
@@ -224,19 +224,19 @@ the existing menu-item path (or show a hint), and document the behavior.
 
 **Automated Verification**:
 
-- [ ] `npm test` passes (includes the new `test/menu.test.js` `openCommand` cases).
-- [ ] `npm run typecheck` passes (`MenuResult.openCommand`, `enter()` changes,
+- [x] `npm test` passes (includes the new `test/menu.test.js` `openCommand` cases).
+- [x] `npm run typecheck` passes (`MenuResult.openCommand`, `enter()` changes,
       and the `runMenuItem` reorder all type-strip cleanly).
 
 **Manual Verification**:
 
-- [ ] With `menu.json` containing `"openCommand": "open $NC_SELECTED_PATH"` (macOS),
+- [x] With `menu.json` containing `"openCommand": "open $NC_SELECTED_PATH"` (macOS),
       run `npm start`, hover a file, press `Enter` — the file opens in its default
       app; the panes redraw and the cursor stays on the file.
-- [ ] Press `Enter` on a directory and on the `..` row — navigation is unchanged.
-- [ ] Remove `openCommand` from `menu.json`, restart, press `Enter` on a file —
+- [x] Press `Enter` on a directory and on the `..` row — navigation is unchanged.
+- [x] Remove `openCommand` from `menu.json`, restart, press `Enter` on a file —
       the status line shows the "No open command set…" hint and nothing else happens.
-- [ ] Press `F1` — the help overlay's `Enter` row reflects the file-open behavior.
+- [x] Press `F1` — the help overlay's `Enter` row reflects the file-open behavior.
 
 ## Implementation Notes
 
